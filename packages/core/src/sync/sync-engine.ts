@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Outbox, type OutboxEntry } from "./outbox.js";
 import type { LocalStore, SyncTable } from "../store/local-store.js";
+import { collectOutstandingFields, mergeRemoteWithOutbox } from "./conflict.js";
 
 export interface SyncEngineDeps {
   supabase: SupabaseClient;
@@ -53,6 +54,48 @@ export class SyncEngine {
     await this.deps.outbox.ack(e.queuedAt);
     return true;
   }
+
+  async pull(sinceIso: string | null): Promise<string> {
+    let maxSeen = sinceIso;
+    const cursor = sinceIso ?? "1970-01-01T00:00:00.000Z";
+    const outboxEntries = await this.deps.outbox.peekAll();
+
+    for (const t of TABLES) {
+      const { data, error } = await this.deps.supabase
+        .from(t)
+        .select("*")
+        .gt("updated_at", cursor)
+        .eq("user_id", this.deps.userId)
+        .order("updated_at", { ascending: true });
+      if (error) throw new Error(`pull ${t}: ${error.message}`);
+      const rows = (data ?? []) as Record<string, unknown>[];
+      for (const row of rows) {
+        const camel = snakeToCamelRow(row);
+        const local = await this.deps.store.findById<any>(t, camel.id as string);
+        const outstanding = collectOutstandingFields(outboxEntries, t, camel.id as string);
+        const merged = local && outstanding.length
+          ? mergeRemoteWithOutbox(local, camel as any, outstanding)
+          : camel;
+        await this.deps.store.upsert(t, merged as any);
+        if (!maxSeen || (camel.updatedAt as string) > maxSeen) {
+          maxSeen = camel.updatedAt as string;
+        }
+      }
+    }
+    return maxSeen ?? (sinceIso ?? "1970-01-01T00:00:00.000Z");
+  }
 }
 
 export const SYNCED_TABLES = TABLES;
+
+function snakeToCamel(s: string): string {
+  return s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function snakeToCamelRow(row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) {
+    out[snakeToCamel(k)] = v;
+  }
+  return out;
+}
