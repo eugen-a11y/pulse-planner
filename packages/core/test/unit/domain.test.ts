@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ProjectSchema, makeProject } from "../../src/domain/project.js";
+import { TaskSchema, makeTask } from "../../src/domain/task.js";
+import type { TaskStatus } from "../../src/domain/task.js";
 
 describe("Project", () => {
   it("makeProject populates defaults", () => {
@@ -34,5 +36,53 @@ describe("Project", () => {
       makeProject({ userId: "00000000-0000-7000-8000-000000000001", name: "X" }),
     );
     expect(r.success).toBe(true);
+  });
+});
+
+describe("Task", () => {
+  it("makeTask defaults", () => {
+    const t = makeTask({
+      userId: "user",
+      projectId: "proj",
+      title: "Do thing",
+    });
+    expect(t.id).toBeTypeOf("string");
+    expect(t.status).toBe<TaskStatus>("todo");
+    expect(t.priority).toBe(3);
+    expect(t.parentTaskId).toBeNull();
+    expect(t.dueDate).toBeNull();
+    expect(t.completedAt).toBeNull();
+    expect(t.recurrenceRule).toBeNull();
+    expect(t.recurrenceParentId).toBeNull();
+  });
+
+  it("TaskSchema rejects priority out of range", () => {
+    const t = makeTask({ userId: "u", projectId: "p", title: "x" });
+    const r = TaskSchema.safeParse({ ...t, priority: 5 });
+    expect(r.success).toBe(false);
+  });
+
+  it("TaskSchema rejects unknown status", () => {
+    const t = makeTask({ userId: "u", projectId: "p", title: "x" });
+    const r = TaskSchema.safeParse({ ...t, status: "blocked" });
+    expect(r.success).toBe(false);
+  });
+
+  it("makeTask accepts due date and recurrence", () => {
+    const t = makeTask({
+      userId: "u",
+      projectId: "p",
+      title: "x",
+      dueDate: "2026-06-01T09:00:00.000Z",
+      recurrenceRule: "FREQ=WEEKLY;BYDAY=MO",
+    });
+    expect(t.dueDate).toBe("2026-06-01T09:00:00.000Z");
+    expect(t.recurrenceRule).toBe("FREQ=WEEKLY;BYDAY=MO");
+  });
+
+  it("TaskSchema rejects invalid RRULE", () => {
+    const t = makeTask({ userId: "u", projectId: "p", title: "x" });
+    const r = TaskSchema.safeParse({ ...t, recurrenceRule: "garbage" });
+    expect(r.success).toBe(false);
   });
 });
