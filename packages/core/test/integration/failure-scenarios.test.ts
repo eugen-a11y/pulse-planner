@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { makeProject, makeTask, nowIso } from "../../src/index.js";
+import { makeProject } from "../../src/index.js";
 import { createTestUser, deleteTestUser, uniqueEmail } from "./helpers/supabase-test.js";
 import { buildSignedInClient } from "./helpers/client.js";
 

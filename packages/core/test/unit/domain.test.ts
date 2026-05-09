@@ -5,7 +5,7 @@ import type { TaskStatus } from "../../src/domain/task.js";
 import { TagSchema, makeTag } from "../../src/domain/tag.js";
 import { TaskTagSchema, makeTaskTag } from "../../src/domain/task-tag.js";
 import { AttachmentSchema, makeAttachment } from "../../src/domain/attachment.js";
-import { TimeEntrySchema, makeTimeEntry, stopTimer } from "../../src/domain/time-entry.js";
+import { makeTimeEntry, stopTimer } from "../../src/domain/time-entry.js";
 import { CommentSchema, makeComment } from "../../src/domain/comment.js";
 import { NoteSchema, makeProjectNote, makeTaskNote } from "../../src/domain/note.js";
 import { ActivitySchema, makeActivity } from "../../src/domain/activity.js";

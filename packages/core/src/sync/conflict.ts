@@ -1,4 +1,3 @@
-import type { OutboxEntry } from "./outbox.js";
 
 export function mergeRemoteWithOutbox<T extends Record<string, unknown>>(
   local: T,
