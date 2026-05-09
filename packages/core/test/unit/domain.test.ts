@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { ProjectSchema, makeProject } from "../../src/domain/project.js";
 import { TaskSchema, makeTask } from "../../src/domain/task.js";
 import type { TaskStatus } from "../../src/domain/task.js";
+import { TagSchema, makeTag } from "../../src/domain/tag.js";
+import { TaskTagSchema, makeTaskTag } from "../../src/domain/task-tag.js";
+import { AttachmentSchema, makeAttachment } from "../../src/domain/attachment.js";
+import { TimeEntrySchema, makeTimeEntry, stopTimer } from "../../src/domain/time-entry.js";
+import { CommentSchema, makeComment } from "../../src/domain/comment.js";
+import { NoteSchema, makeProjectNote, makeTaskNote } from "../../src/domain/note.js";
+import { ActivitySchema, makeActivity } from "../../src/domain/activity.js";
 
 describe("Project", () => {
   it("makeProject populates defaults", () => {
@@ -84,5 +91,105 @@ describe("Task", () => {
     const t = makeTask({ userId: "u", projectId: "p", title: "x" });
     const r = TaskSchema.safeParse({ ...t, recurrenceRule: "garbage" });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("Tag", () => {
+  it("defaults color and validates", () => {
+    const t = makeTag({ userId: "u", name: "urgent" });
+    expect(TagSchema.safeParse(t).success).toBe(true);
+    expect(t.color).toBe("#71717a");
+  });
+});
+
+describe("TaskTag", () => {
+  it("makes a junction row", () => {
+    const tt = makeTaskTag({ userId: "u", taskId: "t", tagId: "g" });
+    expect(TaskTagSchema.safeParse(tt).success).toBe(true);
+  });
+});
+
+describe("Attachment", () => {
+  it("validates", () => {
+    const a = makeAttachment({
+      userId: "u",
+      taskId: "t",
+      storagePath: "attachments/u/t/file.png",
+      filename: "file.png",
+      mime: "image/png",
+      sizeBytes: 1024,
+    });
+    expect(AttachmentSchema.safeParse(a).success).toBe(true);
+  });
+
+  it("rejects non-positive size", () => {
+    const a = makeAttachment({
+      userId: "u", taskId: "t", storagePath: "p", filename: "f", mime: "x/y", sizeBytes: 1,
+    });
+    expect(AttachmentSchema.safeParse({ ...a, sizeBytes: 0 }).success).toBe(false);
+  });
+});
+
+describe("TimeEntry", () => {
+  it("makeTimeEntry has running state", () => {
+    const te = makeTimeEntry({ userId: "u", taskId: "t", startedAt: "2026-05-09T10:00:00.000Z" });
+    expect(te.endedAt).toBeNull();
+    expect(te.durationSeconds).toBeNull();
+  });
+
+  it("stopTimer sets endedAt and computes duration", () => {
+    const te = makeTimeEntry({ userId: "u", taskId: "t", startedAt: "2026-05-09T10:00:00.000Z" });
+    const stopped = stopTimer(te, "2026-05-09T10:01:30.000Z");
+    expect(stopped.endedAt).toBe("2026-05-09T10:01:30.000Z");
+    expect(stopped.durationSeconds).toBe(90);
+  });
+
+  it("rejects negative duration", () => {
+    const te = makeTimeEntry({ userId: "u", taskId: "t", startedAt: "2026-05-09T10:00:00.000Z" });
+    expect(() =>
+      stopTimer(te, "2026-05-09T09:59:00.000Z"),
+    ).toThrowError(/end before start/);
+  });
+});
+
+describe("Comment", () => {
+  it("validates", () => {
+    const c = makeComment({ userId: "u", taskId: "t", bodyMd: "looks good" });
+    expect(CommentSchema.safeParse(c).success).toBe(true);
+  });
+});
+
+describe("Note", () => {
+  it("project note has projectId only", () => {
+    const n = makeProjectNote({ userId: "u", projectId: "p", bodyMd: "hi" });
+    expect(n.projectId).toBe("p");
+    expect(n.taskId).toBeNull();
+    expect(NoteSchema.safeParse(n).success).toBe(true);
+  });
+
+  it("task note has taskId only", () => {
+    const n = makeTaskNote({ userId: "u", taskId: "t", bodyMd: "hi" });
+    expect(n.projectId).toBeNull();
+    expect(n.taskId).toBe("t");
+    expect(NoteSchema.safeParse(n).success).toBe(true);
+  });
+
+  it("rejects when both ids set or both null", () => {
+    const n = makeTaskNote({ userId: "u", taskId: "t", bodyMd: "x" });
+    expect(NoteSchema.safeParse({ ...n, projectId: "p" }).success).toBe(false);
+    expect(NoteSchema.safeParse({ ...n, taskId: null }).success).toBe(false);
+  });
+});
+
+describe("Activity", () => {
+  it("validates", () => {
+    const a = makeActivity({
+      userId: "u",
+      entityType: "task",
+      entityId: "t",
+      action: "status_changed",
+      payload: { from: "todo", to: "done" },
+    });
+    expect(ActivitySchema.safeParse(a).success).toBe(true);
   });
 });
