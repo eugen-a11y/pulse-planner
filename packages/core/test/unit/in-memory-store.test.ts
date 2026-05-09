@@ -55,4 +55,18 @@ describe("InMemoryStore", () => {
     const after = await store.findById("projects", a.id);
     expect(after?.name).toBe("a");
   });
+
+  it("transaction rolls back softDelete on throw", async () => {
+    const store = new InMemoryStore();
+    const t = makeTask({ userId: "u1", projectId: "p", title: "x" });
+    await store.upsert("tasks", t);
+    await expect(
+      store.transaction(async (tx) => {
+        await tx.softDelete("tasks", t.id, "2026-05-09T12:00:00.000Z");
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
+    const after = await store.findById("tasks", t.id);
+    expect(after?.deletedAt).toBeNull();
+  });
 });

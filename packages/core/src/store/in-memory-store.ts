@@ -50,8 +50,7 @@ export class InMemoryStore implements LocalStore {
   async softDelete(table: SyncTable, id: string, atIso: string): Promise<void> {
     const r = this.getTable(table).get(id);
     if (!r) return;
-    r.deletedAt = atIso;
-    r.updatedAt = atIso;
+    this.getTable(table).set(id, structuredClone({ ...r, deletedAt: atIso, updatedAt: atIso }));
   }
 
   async transaction<R>(fn: (tx: LocalStore) => Promise<R>): Promise<R> {
