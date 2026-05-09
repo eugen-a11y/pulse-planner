@@ -55,6 +55,24 @@ export class SyncEngine {
     return true;
   }
 
+  subscribeRealtime(onChange: () => void): () => void {
+    const channels = TABLES.map((t) => {
+      const ch = (this.deps.supabase.channel(`pulse:${t}`) as any)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: t, filter: `user_id=eq.${this.deps.userId}` },
+          () => onChange(),
+        );
+      ch.subscribe();
+      return ch;
+    });
+    return () => {
+      for (const ch of channels) {
+        try { (ch as any).unsubscribe?.(); } catch { /* ignore */ }
+      }
+    };
+  }
+
   async pull(sinceIso: string | null): Promise<string> {
     let maxSeen = sinceIso;
     const cursor = sinceIso ?? "1970-01-01T00:00:00.000Z";

@@ -178,3 +178,25 @@ describe("SyncEngine.pull", () => {
     expect(got!.name).toBe("LOCAL");          // outbox wins
   });
 });
+
+describe("SyncEngine.subscribeRealtime", () => {
+  it("calls back when realtime payload arrives", async () => {
+    let registered: ((payload: any) => void) | null = null;
+    const channel = {
+      on: vi.fn((_e: string, _f: any, cb: any) => { registered = cb; return channel; }),
+      subscribe: vi.fn(),
+    };
+    const supa = {
+      rpc: vi.fn(),
+      from: () => ({}),
+      channel: vi.fn(() => channel),
+    } as any;
+    const engine = new SyncEngine({ supabase: supa, outbox: new Outbox(), store: new InMemoryStore(), userId: "u" });
+
+    let hits = 0;
+    const unsub = engine.subscribeRealtime(() => { hits++; });
+    registered?.({ new: { id: "x" } });
+    expect(hits).toBe(1);
+    expect(typeof unsub).toBe("function");
+  });
+});
