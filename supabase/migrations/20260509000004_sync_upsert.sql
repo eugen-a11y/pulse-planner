@@ -49,7 +49,7 @@ begin
     execute format(
       'update public.%I set deleted_at = $1, updated_at = $1
          where id = $2 and user_id = $3
-           and (deleted_at is null or deleted_at > $1)',
+           and (deleted_at is null or deleted_at < $1)',
       p_table
     ) using p_client_ts, p_id, current_uid;
     return p_client_ts;
@@ -106,4 +106,5 @@ begin
 end $$;
 
 revoke all on function public.sync_upsert(text,uuid,text,jsonb,timestamptz) from public;
+revoke all on function public.sync_upsert(text,uuid,text,jsonb,timestamptz) from anon;
 grant execute on function public.sync_upsert(text,uuid,text,jsonb,timestamptz) to authenticated;
