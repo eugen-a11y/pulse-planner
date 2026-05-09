@@ -1,0 +1,8 @@
+dist/
+dist-electron/
+release/
+node_modules/
+.vite/
+*.log
+playwright-report/
+test-results/
