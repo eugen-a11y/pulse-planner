@@ -1,4 +1,8 @@
-import "dotenv/config";
+import { config } from "dotenv";
+import { resolve } from "node:path";
+// Load from repo root — vitest cwd is packages/core, root is two levels up.
+config({ path: resolve(process.cwd(), "../../.env"), override: false });
+config({ path: resolve(process.cwd(), ".env"), override: false });
 
 export const SUPABASE_URL = process.env.SUPABASE_URL!;
 export const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!;

@@ -15,6 +15,12 @@ const TABLES: readonly SyncTable[] = [
   "attachments", "time_entries", "comments", "notes",
 ];
 
+/** Tables that have an updated_at column and participate in cursor-based pull. */
+const CURSOR_TABLES: readonly SyncTable[] = [
+  "projects", "tasks", "tags",
+  "attachments", "time_entries", "comments", "notes",
+];
+
 function camelToSnake(s: string): string {
   return s.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
 }
@@ -78,7 +84,7 @@ export class SyncEngine {
     const cursor = sinceIso ?? "1970-01-01T00:00:00.000Z";
     const outboxEntries = await this.deps.outbox.peekAll();
 
-    for (const t of TABLES) {
+    for (const t of CURSOR_TABLES) {
       const { data, error } = await this.deps.supabase
         .from(t)
         .select("*")

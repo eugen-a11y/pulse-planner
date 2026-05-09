@@ -1,8 +1,12 @@
 -- updated_at on every entity table
+-- Only auto-stamp if the caller did NOT explicitly change updated_at.
+-- This preserves client timestamps supplied by sync_upsert (LWW).
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
 begin
-  new.updated_at := now();
+  if new.updated_at = old.updated_at then
+    new.updated_at := now();
+  end if;
   return new;
 end $$;
 
