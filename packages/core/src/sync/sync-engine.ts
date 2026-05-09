@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { Outbox, type OutboxEntry } from "./outbox.js";
 import type { LocalStore, SyncTable } from "../store/local-store.js";
 import { collectOutstandingFields, mergeRemoteWithOutbox } from "./conflict.js";
+import { snakifyKeys, snakeToCamelRow } from "./case-mapping.js";
 
 export interface SyncEngineDeps {
   supabase: SupabaseClient;
@@ -20,18 +21,6 @@ const CURSOR_TABLES: readonly SyncTable[] = [
   "projects", "tasks", "tags",
   "attachments", "time_entries", "comments", "notes",
 ];
-
-function camelToSnake(s: string): string {
-  return s.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
-}
-
-function snakifyKeys(obj: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    out[camelToSnake(k)] = v;
-  }
-  return out;
-}
 
 export class SyncEngine {
   constructor(private readonly deps: SyncEngineDeps) {}
@@ -111,15 +100,3 @@ export class SyncEngine {
 }
 
 export const SYNCED_TABLES = TABLES;
-
-function snakeToCamel(s: string): string {
-  return s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-}
-
-function snakeToCamelRow(row: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(row)) {
-    out[snakeToCamel(k)] = v;
-  }
-  return out;
-}
