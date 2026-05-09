@@ -41,6 +41,14 @@ export interface CliContext {
   refreshTokenKey: string;
 }
 
+export async function restoreOrFail(ctx: CliContext): Promise<{ userId: string }> {
+  const session = await ctx.auth.restoreSession();
+  if (!session) throw new Error("not signed in; run `pulse-cli signin <email> <password>`");
+  // rebuild engine with the right userId
+  (ctx.engine as any).deps.userId = session.user.id;
+  return { userId: session.user.id };
+}
+
 export function buildContext(userId = "anon"): CliContext {
   const url = process.env.SUPABASE_URL;
   const anonKey = process.env.SUPABASE_ANON_KEY;
