@@ -1,7 +1,5 @@
 import { createRoot } from "react-dom/client";
-
-const App = () => (
-  <div className="h-full flex items-center justify-center text-2xl text-pulse">Pulse · loading…</div>
-);
+import { App } from "./App.js";
+import "./styles/tailwind.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
