@@ -20,3 +20,7 @@ api.events.on("toast.show", (text) => {
 api.events.on("nav.today", () => {
   void import("./stores/ui.js").then(({ useUi }) => useUi.getState().setView({ kind: "today" }));
 });
+
+api.events.on("nav.task", (taskId) => {
+  void import("./stores/ui.js").then(({ useUi }) => useUi.getState().selectTask(String(taskId)));
+});

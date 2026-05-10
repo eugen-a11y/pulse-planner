@@ -6,6 +6,12 @@ import {
 import type { AppDeps } from "./deps.js";
 import { broadcast, pushAfterMutation, requireUser } from "./ipc-helpers.js";
 
+async function tasksChanged(deps: AppDeps, getWin: () => BrowserWindow | null): Promise<void> {
+  broadcast(getWin(), "tasks.changed");
+  const { rescheduleFromStore } = await import("./notifications.js");
+  void rescheduleFromStore(deps);
+}
+
 export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): void {
   // ─── auth ───
   ipcMain.handle("auth.signIn", async (_e, email: string, password: string) => {
@@ -120,7 +126,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: serializeTaskForOutbox(t),
       clientTs: t.updatedAt,
     });
-    broadcast(getWin(), "tasks.changed");
+    void tasksChanged(deps, getWin);
     void pushAfterMutation(deps);
     return t;
   });
@@ -138,7 +144,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: { ...rest, updatedAt: ts },
       clientTs: ts,
     });
-    broadcast(getWin(), "tasks.changed");
+    void tasksChanged(deps, getWin);
     void pushAfterMutation(deps);
     return updated;
   });
@@ -151,7 +157,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       entityTable: "tasks", entityId: id, op: "delete",
       changedFields: {}, clientTs: ts,
     });
-    broadcast(getWin(), "tasks.changed");
+    void tasksChanged(deps, getWin);
     void pushAfterMutation(deps);
   });
 
@@ -167,7 +173,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: { status: "done", completedAt: ts, updatedAt: ts },
       clientTs: ts,
     });
-    broadcast(getWin(), "tasks.changed");
+    void tasksChanged(deps, getWin);
     void pushAfterMutation(deps);
     return updated;
   });
@@ -360,10 +366,28 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       entityTable: "tasks", entityId: t.id, op: "insert",
       changedFields: serializeTaskForOutbox(t), clientTs: t.updatedAt,
     });
-    broadcast(getWin(), "tasks.changed");
+    void tasksChanged(deps, getWin);
     void pushAfterMutation(deps);
     void import("./window.js").then(({ hideQuickAdd }) => hideQuickAdd());
     return t;
+  });
+
+  // ─── notifications ───
+  ipcMain.handle("notifications.snooze", async (_e, taskId: string, minutes: number) => {
+    const local = await deps.store.findById<Task>("tasks", taskId);
+    if (!local || !local.dueDate) return;
+    const next = new Date(new Date(local.dueDate).getTime() + minutes * 60_000).toISOString();
+    const ts = nowIso();
+    const updated: Task = { ...local, dueDate: next, updatedAt: ts };
+    await deps.store.upsert("tasks", updated);
+    await deps.outbox.enqueue({
+      entityTable: "tasks", entityId: taskId, op: "update",
+      changedFields: { dueDate: next, updatedAt: ts }, clientTs: ts,
+    });
+    void tasksChanged(deps, getWin);
+    void pushAfterMutation(deps);
+    const { rescheduleFromStore } = await import("./notifications.js");
+    void rescheduleFromStore(deps);
   });
 
   // ─── tray ───
