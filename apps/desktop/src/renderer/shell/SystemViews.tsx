@@ -1,4 +1,4 @@
-import { Star, Calendar, Inbox } from "lucide-react";
+import { LayoutDashboard, Star, Calendar, Inbox } from "lucide-react";
 import { useUi } from "../stores/ui.js";
 import { useTasks } from "../stores/tasks.js";
 import { cn } from "../lib/cn.js";
@@ -11,6 +11,8 @@ export function SystemViews(): JSX.Element {
 
   return (
     <div className="flex flex-col px-2">
+      <Item active={view.kind === "dashboard"} onClick={() => setView({ kind: "dashboard" })}
+        icon={<LayoutDashboard size={16} />} label="Dashboard" />
       <Item active={view.kind === "today"} onClick={() => setView({ kind: "today" })}
         icon={<Star size={16} />} label="Today" count={todayCount} />
       <Item active={view.kind === "upcoming"} onClick={() => setView({ kind: "upcoming" })}

@@ -48,6 +48,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: {
         id: p.id, name: p.name, color: p.color,
         archived: p.archived, sortOrder: p.sortOrder,
+        dueDate: p.dueDate, description: p.description,
         createdAt: p.createdAt, updatedAt: p.updatedAt, deletedAt: p.deletedAt,
       },
       clientTs: p.updatedAt,

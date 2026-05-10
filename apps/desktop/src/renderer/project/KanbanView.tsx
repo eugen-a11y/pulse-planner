@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { DndContext, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import type { Task } from "@pulse/core";
 import { useTasks } from "../stores/tasks.js";
 import { KanbanColumn } from "./KanbanColumn.js";
@@ -12,6 +12,11 @@ export function KanbanView({ projectId }: { projectId: string }) {
   const byId = useTasks((s) => s.byId);
   const refresh = useTasks((s) => s.refreshProject);
   const update = useTasks((s) => s.update);
+
+  // Without an activation distance, dnd-kit eats the click handler on the card
+  // (drag starts immediately on pointer-down). 8 px lets a tap fire `onClick`
+  // — handled in KanbanColumn → useUi.selectTask — while a real drag still works.
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   useEffect(() => { void refresh(projectId); }, [projectId, refresh]);
   const tasks = ids.map((i) => byId[i]).filter(Boolean) as Task[];
@@ -35,7 +40,7 @@ export function KanbanView({ projectId }: { projectId: string }) {
   }
 
   return (
-    <DndContext onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
       <div className="h-full overflow-x-auto p-4 flex gap-4">
         {STATUSES.map((s) => <KanbanColumn key={s} status={s} tasks={cols[s]} />)}
       </div>

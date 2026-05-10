@@ -7,7 +7,7 @@ export function Sidebar(): JSX.Element {
   return (
     <aside className="w-[220px] bg-[var(--gray-bg)] border-r border-[var(--border)] flex flex-col h-full">
       <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
-        <div className="text-pulse font-semibold tracking-wide">PULSE</div>
+        <div className="text-pulse font-semibold tracking-tight text-xs whitespace-nowrap">Pulse Project Planner</div>
         <button onClick={() => api.quickAdd.show()}
           className="text-xs text-gray-500 hover:text-pulse" title="Quick Add (Ctrl+Shift+Space)">⌘+</button>
       </div>

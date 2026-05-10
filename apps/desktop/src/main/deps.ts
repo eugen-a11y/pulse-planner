@@ -16,6 +16,15 @@ import { TimerService } from "./timer.js";
 // inside the JS bundle — no runtime fs read, works equally in dev and packaged ASAR.
 import migrationSql from "./store/migrations/001_init.sql?raw";
 
+// Idempotent column-additions that mirror Postgres migrations on the cloud side.
+// SQLite has no `ADD COLUMN IF NOT EXISTS`, so we PRAGMA-check before issuing each ALTER.
+function applyAdditiveMigrations(db: Database.Database): void {
+  const projectCols = db.prepare("PRAGMA table_info(projects)").all() as Array<{ name: string }>;
+  const has = (col: string) => projectCols.some((c) => c.name === col);
+  if (!has("due_date"))    db.exec("ALTER TABLE projects ADD COLUMN due_date TEXT");
+  if (!has("description")) db.exec("ALTER TABLE projects ADD COLUMN description TEXT");
+}
+
 export interface AppDeps {
   db: Database.Database;
   store: BetterSqliteStore;
@@ -34,6 +43,7 @@ export function buildDeps(): AppDeps {
   const dbPath = join(app.getPath("userData"), "pulse.db");
   const db = new Database(dbPath);
   db.exec(migrationSql);
+  applyAdditiveMigrations(db);
 
   const store = new BetterSqliteStore(db);
   const stateRepo = new SqliteSyncStateRepo(db);

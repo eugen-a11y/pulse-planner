@@ -19,7 +19,7 @@ export function OfflineBanner(): JSX.Element | null {
     <div className="h-7 px-3 flex items-center text-xs bg-amber-50 text-amber-900 border-b border-amber-200">
       {online
         ? <>Sync hängt · {status.outboxSize} Änderungen warten</>
-        : <>Offline · {status.outboxSize > 0 ? `${status.outboxSize} Änderungen werden nachgesendet` : "Pulse arbeitet weiter"}</>}
+        : <>Offline · {status.outboxSize > 0 ? `${status.outboxSize} Änderungen werden nachgesendet` : "Pulse Project Planner arbeitet weiter"}</>}
     </div>
   );
 }

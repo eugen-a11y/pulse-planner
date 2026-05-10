@@ -9,7 +9,7 @@ export function registerHotkeys(getWin: () => Electron.BrowserWindow | null): vo
     const ok = globalShortcut.register(HOTKEY, () => showQuickAddWindow());
     if (!ok) {
       const win = getWin();
-      win?.webContents.send("toast.show", `Hotkey ${HOTKEY} ist belegt — öffne Pulse über das Tray-Icon.`);
+      win?.webContents.send("toast.show", `Hotkey ${HOTKEY} ist belegt — öffne Pulse Project Planner über das Tray-Icon.`);
     }
     useToastViaIpc();
   });

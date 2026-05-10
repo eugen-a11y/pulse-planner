@@ -9,7 +9,7 @@ export function App(): JSX.Element {
   useEffect(() => { void restore(); }, [restore]);
 
   if (loading) {
-    return <div className="h-full flex items-center justify-center text-pulse">Pulse · loading…</div>;
+    return <div className="h-full flex items-center justify-center text-pulse">Pulse Project Planner · loading…</div>;
   }
   if (!session) return (<>
     <AuthScreen />

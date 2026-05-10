@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 export type ViewKey =
+  | { kind: "dashboard" }
   | { kind: "today" }
   | { kind: "upcoming" }
   | { kind: "project"; projectId: string }
@@ -16,7 +17,7 @@ interface UiState {
 }
 
 export const useUi = create<UiState>((set) => ({
-  currentView: { kind: "today" },
+  currentView: { kind: "dashboard" },
   selectedTaskId: null,
   detailOpen: false,
   setView(view) { set({ currentView: view, selectedTaskId: null, detailOpen: false }); },

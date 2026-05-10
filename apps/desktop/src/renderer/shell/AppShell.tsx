@@ -4,6 +4,7 @@ import { useUi } from "../stores/ui.js";
 import { useTasks } from "../stores/tasks.js";
 import { useProjects } from "../stores/projects.js";
 import { useTags } from "../stores/tags.js";
+import { DashboardView } from "../dashboard/DashboardView.js";
 import { TodayView } from "../today/TodayView.js";
 import { UpcomingView } from "../today/UpcomingView.js";
 import { ProjectView } from "../project/ProjectView.js";
@@ -45,9 +46,10 @@ export function AppShell(): JSX.Element {
 
 function ViewSlot({ view }: { view: ReturnType<typeof useUi.getState>["currentView"] }) {
   switch (view.kind) {
-    case "today":    return <TodayView />;
-    case "upcoming": return <UpcomingView />;
-    case "project":  return <ProjectView projectId={view.projectId} />;
-    case "tag":      return <div className="p-6 text-gray-500">Tag {view.tagId}</div>;
+    case "dashboard": return <DashboardView />;
+    case "today":     return <TodayView />;
+    case "upcoming":  return <UpcomingView />;
+    case "project":   return <ProjectView projectId={view.projectId} />;
+    case "tag":       return <div className="p-6 text-gray-500">Tag {view.tagId}</div>;
   }
 }

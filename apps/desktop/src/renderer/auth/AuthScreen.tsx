@@ -29,7 +29,7 @@ export function AuthScreen(): JSX.Element {
     <div className="h-full flex items-center justify-center bg-[var(--gray-bg)]">
       <form onSubmit={submit} className="w-[360px] bg-white rounded-lg shadow-md border border-[var(--border)] p-8 space-y-4">
         <div className="text-center">
-          <div className="text-3xl font-semibold text-pulse mb-1">Pulse</div>
+          <div className="text-3xl font-semibold text-pulse mb-1 leading-tight">Pulse Project Planner</div>
           <div className="text-sm text-gray-500">{mode === "signin" ? "Anmelden" : "Konto erstellen"}</div>
         </div>
         <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@beispiel.de" />

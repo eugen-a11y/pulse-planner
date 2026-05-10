@@ -27,5 +27,5 @@ api.events.on("nav.task", (taskId) => {
 
 api.events.on("updater.downloaded", (version) => {
   void import("./components/ui/toast.js").then(({ useToasts }) =>
-    useToasts.getState().push(`Pulse ${String(version)} verfügbar — neu starten zum Installieren`, "success"));
+    useToasts.getState().push(`Pulse Project Planner ${String(version)} verfügbar — neu starten zum Installieren`, "success"));
 });
