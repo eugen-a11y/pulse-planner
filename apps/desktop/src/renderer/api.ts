@@ -7,3 +7,8 @@ declare global {
 }
 
 export const api: PulseApi = window.pulse;
+
+api.events.on("toast.show", (text) => {
+  // Lazy import to avoid cycles
+  void import("./components/ui/toast.js").then(({ useToasts }) => useToasts.getState().push(String(text), "info"));
+});

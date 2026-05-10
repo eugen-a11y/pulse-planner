@@ -110,4 +110,5 @@ export type PulseEvent =
   | "sync.status"
   | "timer.current"
   | "updater.progress"
-  | "auth.expired";
+  | "auth.expired"
+  | "toast.show";
