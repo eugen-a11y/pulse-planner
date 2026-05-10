@@ -33,8 +33,8 @@ function createWindow(): void {
 
 void app.whenReady().then(() => {
   deps = buildDeps();
-  registerIpc(deps);
   createWindow();
+  registerIpc(deps, () => win);
 });
 
 app.on("window-all-closed", () => {
