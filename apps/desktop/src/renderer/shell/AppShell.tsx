@@ -6,6 +6,7 @@ import { useProjects } from "../stores/projects.js";
 import { useTags } from "../stores/tags.js";
 import { TodayView } from "../today/TodayView.js";
 import { UpcomingView } from "../today/UpcomingView.js";
+import { ProjectView } from "../project/ProjectView.js";
 
 export function AppShell(): JSX.Element {
   const view = useUi((s) => s.currentView);
@@ -38,7 +39,7 @@ function ViewSlot({ view }: { view: ReturnType<typeof useUi.getState>["currentVi
   switch (view.kind) {
     case "today":    return <TodayView />;
     case "upcoming": return <UpcomingView />;
-    case "project":  return <div className="p-6 text-gray-500">Project {view.projectId} (Task 16)</div>;
+    case "project":  return <ProjectView projectId={view.projectId} />;
     case "tag":      return <div className="p-6 text-gray-500">Tag {view.tagId}</div>;
   }
 }
