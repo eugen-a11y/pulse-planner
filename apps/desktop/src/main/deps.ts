@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import { app } from "electron";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import WebSocket from "ws";
 import {
   AuthService,
   createPulseSupabaseClient,
@@ -30,8 +31,10 @@ export function buildDeps(): AppDeps {
   const anonKey = process.env.SUPABASE_ANON_KEY ?? "";
   const dbPath = join(app.getPath("userData"), "pulse.db");
   const db = new Database(dbPath);
+  // Migration SQL is shipped at apps/desktop/src/main/store/migrations/001_init.sql
+  // and the bundled main runs from dist-electron/main; resolve via app root.
   const migration = readFileSync(
-    join(import.meta.dirname ?? __dirname, "store", "migrations", "001_init.sql"),
+    join(app.getAppPath(), "src", "main", "store", "migrations", "001_init.sql"),
     "utf8",
   );
   db.exec(migration);
@@ -39,7 +42,13 @@ export function buildDeps(): AppDeps {
   const store = new BetterSqliteStore(db);
   const stateRepo = new SqliteSyncStateRepo(db);
   const outbox = new Outbox();
-  const supabase = createPulseSupabaseClient({ url, anonKey });
+  // Electron 33 ships Node 20 without a global WebSocket; inject `ws` for the
+  // Supabase Realtime client so subscriptions work in the main process.
+  const supabase = createPulseSupabaseClient({
+    url,
+    anonKey,
+    options: { realtime: { transport: WebSocket as unknown as never, params: { eventsPerSecond: 5 } } },
+  });
   const auth = new AuthService(supabase, new FileTokenStorage());
 
   const deps: AppDeps = {

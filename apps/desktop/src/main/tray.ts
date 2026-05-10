@@ -1,15 +1,12 @@
 import { app, Tray, Menu, nativeImage } from "electron";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { showQuickAddWindow } from "./window.js";
-
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 let tray: Tray | null = null;
 let lastCount = 0;
 
 export function setupTray(getWin: () => Electron.BrowserWindow | null): void {
-  const iconPath = join(__dirname, "..", "..", "assets", "tray-default.png");
+  const iconPath = join(app.getAppPath(), "assets", "tray-default.png");
   tray = new Tray(nativeImage.createFromPath(iconPath));
   tray.setToolTip("Pulse");
   tray.on("click", () => {

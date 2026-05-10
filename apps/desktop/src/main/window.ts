@@ -1,8 +1,14 @@
-import { BrowserWindow } from "electron";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { BrowserWindow, app } from "electron";
+import { join } from "node:path";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// vite-plugin-electron bundles this file; emitted at dist-electron/main/.
+// Use app.getAppPath() (= apps/desktop/) as a stable anchor regardless of bundle layout.
+function dist(...segments: string[]): string {
+  return join(app.getAppPath(), "dist-electron", ...segments);
+}
+function rendererDist(...segments: string[]): string {
+  return join(app.getAppPath(), "dist", "renderer", ...segments);
+}
 
 export function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -12,7 +18,7 @@ export function createMainWindow(): BrowserWindow {
     minHeight: 600,
     show: false,
     webPreferences: {
-      preload: join(__dirname, "..", "preload", "preload.js"),
+      preload: dist("preload", "preload.js"),
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
@@ -21,7 +27,7 @@ export function createMainWindow(): BrowserWindow {
   if (process.env.VITE_DEV_SERVER_URL) {
     void win.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
-    void win.loadFile(join(__dirname, "..", "..", "renderer", "index.html"));
+    void win.loadFile(rendererDist("index.html"));
   }
   win.once("ready-to-show", () => win.show());
   return win;
@@ -39,7 +45,7 @@ export function showQuickAddWindow(): BrowserWindow {
     frame: false, resizable: false,
     center: true, alwaysOnTop: false, show: false,
     webPreferences: {
-      preload: join(__dirname, "..", "preload", "preload.js"),
+      preload: dist("preload", "preload.js"),
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
@@ -48,7 +54,7 @@ export function showQuickAddWindow(): BrowserWindow {
   if (process.env.VITE_DEV_SERVER_URL) {
     void quickAddWin.loadURL(process.env.VITE_DEV_SERVER_URL + "src/renderer/quick-add/index.html");
   } else {
-    void quickAddWin.loadFile(join(__dirname, "..", "..", "renderer", "quick-add", "index.html"));
+    void quickAddWin.loadFile(rendererDist("quick-add", "index.html"));
   }
   quickAddWin.once("ready-to-show", () => { quickAddWin?.show(); quickAddWin?.focus(); });
   quickAddWin.on("blur", () => { quickAddWin?.hide(); });

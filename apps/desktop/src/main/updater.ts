@@ -1,5 +1,9 @@
 import * as updaterPkg from "electron-updater";
-const autoUpdater = updaterPkg.autoUpdater;
+// CJS-interop: depending on bundler/runtime, `autoUpdater` may live on
+// the namespace object or on `default`.
+const autoUpdater =
+  (updaterPkg as { autoUpdater?: typeof updaterPkg.autoUpdater }).autoUpdater
+  ?? ((updaterPkg as unknown as { default: { autoUpdater: typeof updaterPkg.autoUpdater } }).default?.autoUpdater);
 import type { BrowserWindow } from "electron";
 import type { UpdateInfo as PulseUpdateInfo } from "./ipc-types.js";
 
