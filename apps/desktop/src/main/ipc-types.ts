@@ -111,4 +111,5 @@ export type PulseEvent =
   | "timer.current"
   | "updater.progress"
   | "auth.expired"
-  | "toast.show";
+  | "toast.show"
+  | "nav.today";

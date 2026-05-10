@@ -80,4 +80,7 @@ contextBridge.exposeInMainWorld("pulse", {
       return () => ipcRenderer.removeListener(channel, handler);
     },
   },
+  _tray: {
+    setCount: invoke("tray.setCount"),
+  },
 });

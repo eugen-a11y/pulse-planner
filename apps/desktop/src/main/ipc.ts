@@ -366,6 +366,12 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     return t;
   });
 
+  // ─── tray ───
+  ipcMain.handle("tray.setCount", async (_e, n: number) => {
+    const { updateTrayCount } = await import("./tray.js");
+    updateTrayCount(n);
+  });
+
   // ─── attachments ───
   ipcMain.handle("attachments.listForTask", async (_e, taskId: string) => {
     const userId = requireUser(deps);

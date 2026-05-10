@@ -33,6 +33,7 @@ export const useTasks = create<TasksState>((set, get) => ({
     const list = await api.tasks.listToday();
     const idx = indexBy(list);
     set((s) => ({ byId: { ...s.byId, ...idx }, todayIds: list.map((t) => t.id), loaded: true }));
+    void (await import("../api.js")).reportTodayCount(list.length);
   },
   async refreshUpcoming() {
     const list = await api.tasks.listUpcoming();
