@@ -9,8 +9,8 @@
     "build": "tsc -p tsconfig.node.json && tsc -p tsconfig.json --noEmit && vite build",
     "pack": "pnpm build && electron-builder --dir",
     "dist": "pnpm build && electron-builder",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "C:\\Users\\info\\node22\\node.exe ./node_modules/vitest/vitest.mjs run",
+    "test:watch": "C:\\Users\\info\\node22\\node.exe ./node_modules/vitest/vitest.mjs",
     "test:e2e": "playwright test",
     "lint": "eslint src test"
   },
@@ -25,6 +25,7 @@
   "devDependencies": {
     "@dnd-kit/core": "^6.1.0",
     "@dnd-kit/sortable": "^8.0.0",
+    "@electron/rebuild": "^4.0.4",
     "@playwright/test": "^1.47.0",
     "@radix-ui/react-dialog": "^1.1.0",
     "@radix-ui/react-dropdown-menu": "^2.1.0",
