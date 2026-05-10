@@ -110,6 +110,7 @@ export type PulseEvent =
   | "sync.status"
   | "timer.current"
   | "updater.progress"
+  | "updater.downloaded"
   | "auth.expired"
   | "toast.show"
   | "nav.today"

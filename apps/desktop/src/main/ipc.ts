@@ -396,6 +396,16 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     updateTrayCount(n);
   });
 
+  // ─── updater ───
+  ipcMain.handle("updater.check", async () => {
+    const { getUpdater } = await import("./updater-ref.js");
+    return await getUpdater()?.check() ?? null;
+  });
+  ipcMain.on("updater.installAndRestart", async () => {
+    const { getUpdater } = await import("./updater-ref.js");
+    getUpdater()?.installAndRestart();
+  });
+
   // ─── attachments ───
   ipcMain.handle("attachments.listForTask", async (_e, taskId: string) => {
     const userId = requireUser(deps);

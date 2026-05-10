@@ -24,3 +24,8 @@ api.events.on("nav.today", () => {
 api.events.on("nav.task", (taskId) => {
   void import("./stores/ui.js").then(({ useUi }) => useUi.getState().selectTask(String(taskId)));
 });
+
+api.events.on("updater.downloaded", (version) => {
+  void import("./components/ui/toast.js").then(({ useToasts }) =>
+    useToasts.getState().push(`Pulse ${String(version)} verfügbar — neu starten zum Installieren`, "success"));
+});

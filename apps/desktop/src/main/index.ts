@@ -5,6 +5,8 @@ import { registerIpc } from "./ipc.js";
 import { registerHotkeys } from "./hotkey.js";
 import { setupTray } from "./tray.js";
 import { setupNotifications } from "./notifications.js";
+import { setupUpdater } from "./updater.js";
+import { setUpdater } from "./updater-ref.js";
 
 let win: ReturnType<typeof createMainWindow> | null = null;
 let deps: AppDeps | null = null;
@@ -15,6 +17,8 @@ void app.whenReady().then(() => {
   registerIpc(deps, () => win);
   setupTray(() => win);
   setupNotifications(deps, () => win);
+  const updater = setupUpdater(() => win);
+  setUpdater(updater);
   registerHotkeys(() => win);
 });
 
