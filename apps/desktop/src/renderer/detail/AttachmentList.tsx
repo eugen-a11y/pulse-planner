@@ -14,7 +14,7 @@ export function AttachmentList({ task }: { task: Task }) {
   async function onDrop(e: React.DragEvent) {
     e.preventDefault();
     for (const file of Array.from(e.dataTransfer.files)) {
-      const localPath = (file as unknown as { path?: string }).path;
+      const localPath = window.pulse.getPathForFile(file);
       if (!localPath) { push("Drop fehlgeschlagen — Pfad nicht verfügbar", "error"); continue; }
       try {
         await api.attachments.upload({ taskId: task.id, localPath });
@@ -28,6 +28,11 @@ export function AttachmentList({ task }: { task: Task }) {
     await load();
   }
 
+  async function open(id: string) {
+    try { await api.attachments.openLocally(id); }
+    catch (err) { push((err as Error).message, "error"); }
+  }
+
   return (
     <div onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
       <div className="flex items-center gap-1 text-xs uppercase text-gray-400 mb-1"><Paperclip size={12} /> Anhänge</div>
@@ -39,7 +44,9 @@ export function AttachmentList({ task }: { task: Task }) {
         )}
         {items.map((a) => (
           <div key={a.id} className="flex items-center gap-2 text-sm">
-            <span className="flex-1 truncate">{a.filename}</span>
+            <button onClick={() => void open(a.id)}
+              className="flex-1 truncate text-left text-pulse hover:underline"
+              title="Öffnen mit Standard-App">{a.filename}</button>
             <span className="text-xs text-gray-400">{Math.round(a.sizeBytes / 1024)} KB</span>
             <button onClick={() => void remove(a.id)} aria-label="Löschen" className="text-gray-400 hover:text-red-600"><X size={14} /></button>
           </div>

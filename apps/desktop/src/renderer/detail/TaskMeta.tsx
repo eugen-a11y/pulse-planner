@@ -30,12 +30,14 @@ export function TaskMeta({ task }: { task: Task }) {
       </Row>
       <Row label="Fällig">
         <input
-          type="date"
+          type="datetime-local"
           className="bg-transparent"
-          value={task.dueDate ? format(parseISO(task.dueDate), "yyyy-MM-dd", { locale: de }) : ""}
+          // datetime-local expects "yyyy-MM-ddTHH:mm" in LOCAL time (no timezone).
+          value={task.dueDate ? format(parseISO(task.dueDate), "yyyy-MM-dd'T'HH:mm", { locale: de }) : ""}
           onChange={(e) => {
             const v = e.target.value;
-            const iso = v ? new Date(v + "T09:00:00").toISOString() : null;
+            // new Date(v) treats "yyyy-MM-ddTHH:mm" as local time, then toISOString() converts to UTC.
+            const iso = v ? new Date(v).toISOString() : null;
             void update(task.id, { dueDate: iso });
           }}
         />

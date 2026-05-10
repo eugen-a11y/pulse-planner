@@ -85,7 +85,9 @@ export function showQuickAddWindow(): BrowserWindow {
   if (process.env.VITE_DEV_SERVER_URL) {
     void quickAddWin.loadURL(process.env.VITE_DEV_SERVER_URL + "src/renderer/quick-add/index.html");
   } else {
-    void quickAddWin.loadFile(rendererDist("quick-add", "index.html"));
+    // Vite preserves the input path structure when the entry HTML lives in a
+    // nested folder, so the emitted file is at dist/renderer/src/renderer/quick-add/.
+    void quickAddWin.loadFile(rendererDist("src", "renderer", "quick-add", "index.html"));
   }
   quickAddWin.once("ready-to-show", () => { quickAddWin?.show(); quickAddWin?.focus(); });
   quickAddWin.on("blur", () => { quickAddWin?.hide(); });

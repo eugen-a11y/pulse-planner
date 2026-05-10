@@ -1,9 +1,13 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 import type { PulseEvent } from "./main/ipc-types.js";
 
 const invoke = (channel: string) => (...args: unknown[]) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("pulse", {
+  // Electron 32+ removed File.path. Renderers must call webUtils.getPathForFile
+  // (which exists only in main/preload context) to resolve a dropped file's
+  // absolute path, then send it through IPC to the main process.
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
   auth: {
     signIn: invoke("auth.signIn"),
     signUp: invoke("auth.signUp"),
@@ -47,6 +51,7 @@ contextBridge.exposeInMainWorld("pulse", {
   attachments: {
     listForTask: invoke("attachments.listForTask"),
     upload: invoke("attachments.upload"),
+    openLocally: invoke("attachments.openLocally"),
     delete: invoke("attachments.delete"),
   },
   time_entries: {

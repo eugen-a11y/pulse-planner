@@ -7,12 +7,13 @@ export function DueDateBadge({ iso }: { iso: string | null }) {
   const overdue = isPast(d) && !isToday(d);
   const today = isToday(d);
   const thisWeek = isThisWeek(d, { weekStartsOn: 1 });
+  const time = format(d, "HH:mm", { locale: de });
 
   let cls = "text-gray-500";
-  let label = format(d, "dd.MM.", { locale: de });
-  if (overdue) { cls = "text-red-600 font-medium"; label = "überfällig · " + label; }
-  else if (today) { cls = "text-pulse font-medium"; label = "heute"; }
-  else if (thisWeek) { label = format(d, "EEEE", { locale: de }); }
+  let datePart = format(d, "dd.MM.", { locale: de });
+  if (overdue) { cls = "text-red-600 font-medium"; datePart = "überfällig · " + datePart; }
+  else if (today) { cls = "text-pulse font-medium"; datePart = "heute"; }
+  else if (thisWeek) { datePart = format(d, "EEEE", { locale: de }); }
 
-  return <span className={`text-xs ${cls}`}>{label}</span>;
+  return <span className={`text-xs ${cls}`}>{datePart} · {time}</span>;
 }

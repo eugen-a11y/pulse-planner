@@ -25,6 +25,10 @@ export interface ParsedQuickAdd {
 }
 
 export interface PulseApi {
+  // Resolves an absolute file path from a dropped File object. Required since
+  // Electron 32+ removed File.path; the renderer must call into preload to
+  // hit webUtils.getPathForFile.
+  getPathForFile(file: File): string;
   auth: {
     signIn(email: string, password: string): Promise<PulseSession>;
     signUp(email: string, password: string): Promise<PulseSession>;
@@ -72,6 +76,7 @@ export interface PulseApi {
   attachments: {
     listForTask(taskId: string): Promise<Attachment[]>;
     upload(input: { taskId: string; localPath: string }): Promise<Attachment>;
+    openLocally(id: string): Promise<void>;
     delete(id: string): Promise<void>;
   };
   time_entries: {

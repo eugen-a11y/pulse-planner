@@ -1,4 +1,4 @@
-import { ipcMain, type BrowserWindow } from "electron";
+import { ipcMain, shell, app, type BrowserWindow } from "electron";
 import {
   makeProject, makeTask, makeTag, makeTaskTag, nowIso,
   type Project, type Task, type Tag,
@@ -434,7 +434,10 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const stat = statSync(input.localPath);
     const filename = basename(input.localPath);
     const mime = guessMime(filename);
-    const storagePath = `attachments/${userId}/${input.taskId}/${Date.now()}-${filename}`;
+    // Path is RELATIVE to the bucket. Storage RLS expects (foldername(name))[1]
+    // to equal auth.uid()::text — so the first folder must be the user_id.
+    // (Don't prefix with "attachments/" — that's the bucket name, already implied by .from("attachments").)
+    const storagePath = `${userId}/${input.taskId}/${Date.now()}-${filename}`;
     const { error } = await deps.supabase.storage.from("attachments").upload(storagePath, fileBytes, { contentType: mime, upsert: false });
     if (error) throw new Error(`upload failed: ${error.message}`);
     const att = makeAttachment({
@@ -452,6 +455,21 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     });
     void pushAfterMutation(deps, getWin);
     return att;
+  });
+  ipcMain.handle("attachments.openLocally", async (_e, id: string) => {
+    requireUser(deps);
+    const att = await deps.store.findById<any>("attachments", id);
+    if (!att?.storagePath) throw new Error("attachment not found");
+    const { data, error } = await deps.supabase.storage.from("attachments").download(att.storagePath);
+    if (error || !data) throw new Error(`download failed: ${error?.message ?? "no data"}`);
+    const { writeFileSync, existsSync, mkdirSync } = await import("node:fs");
+    const { join, basename } = await import("node:path");
+    const cacheDir = join(app.getPath("temp"), "pulse-attachments", id);
+    if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
+    const localFile = join(cacheDir, basename(att.filename));
+    writeFileSync(localFile, Buffer.from(await data.arrayBuffer()));
+    const result = await shell.openPath(localFile);
+    if (result) throw new Error(`could not open: ${result}`);
   });
   ipcMain.handle("attachments.delete", async (_e, id: string) => {
     requireUser(deps);
