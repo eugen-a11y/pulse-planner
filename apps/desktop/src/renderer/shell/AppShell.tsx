@@ -8,6 +8,7 @@ import { TodayView } from "../today/TodayView.js";
 import { UpcomingView } from "../today/UpcomingView.js";
 import { ProjectView } from "../project/ProjectView.js";
 import { DetailPane } from "../detail/DetailPane.js";
+import { TopBarPill } from "./TopBarPill.js";
 
 export function AppShell(): JSX.Element {
   const view = useUi((s) => s.currentView);
@@ -21,7 +22,8 @@ export function AppShell(): JSX.Element {
   }, []);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
+      <TopBarPill />
       <div className="flex-1 flex min-h-0">
         <Sidebar />
         <main className="flex-1 flex min-w-0">
@@ -31,7 +33,7 @@ export function AppShell(): JSX.Element {
           {detailOpen && <DetailPane />}
         </main>
       </div>
-      {/* StatusBar + TopBarPill come in later tasks */}
+      {/* StatusBar comes in later tasks */}
     </div>
   );
 }

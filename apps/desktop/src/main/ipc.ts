@@ -215,6 +215,32 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
   // ─── sync (placeholders, fleshed out later) ───
   ipcMain.handle("sync.pushNow", async () => { await pushAfterMutation(deps); });
   ipcMain.handle("sync.pullNow", async () => { if (deps.engine) await deps.engine.pull(); });
+
+  // ─── time_entries ───
+  ipcMain.handle("time_entries.listForTask", async (_e, taskId: string) => {
+    const userId = requireUser(deps);
+    const all = await deps.store.listSince("time_entries", null, { userId });
+    return (all as any[]).filter((e) => e.taskId === taskId).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  });
+  ipcMain.handle("time_entries.start", async (_e, taskId: string) => {
+    if (!deps.timer) throw new Error("not signed in");
+    const entry = await deps.timer.start(taskId);
+    broadcast(getWin(), "timer.current", deps.timer.current());
+    void pushAfterMutation(deps);
+    return entry;
+  });
+  ipcMain.handle("time_entries.stop", async () => {
+    if (!deps.timer) return null;
+    const entry = await deps.timer.stop();
+    broadcast(getWin(), "timer.current", deps.timer.current());
+    void pushAfterMutation(deps);
+    return entry;
+  });
+
+  // ─── timer state read ───
+  ipcMain.handle("timer.current", async () => {
+    return deps.timer?.current() ?? null;
+  });
 }
 
 function serializeTaskForOutbox(t: Task): Record<string, unknown> {

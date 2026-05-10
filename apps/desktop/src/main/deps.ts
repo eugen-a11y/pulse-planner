@@ -11,6 +11,7 @@ import {
 import { BetterSqliteStore } from "./store/better-sqlite-store.js";
 import { SqliteSyncStateRepo } from "./store/sqlite-sync-state-repo.js";
 import { FileTokenStorage } from "./file-token-storage.js";
+import { TimerService } from "./timer.js";
 
 export interface AppDeps {
   db: Database.Database;
@@ -20,6 +21,7 @@ export interface AppDeps {
   supabase: ReturnType<typeof createPulseSupabaseClient>;
   auth: AuthService;
   engine: SyncEngine | null;     // becomes non-null after sign-in (userId injected)
+  timer: TimerService | null;
   setUserId(userId: string): void;
 }
 
@@ -43,8 +45,11 @@ export function buildDeps(): AppDeps {
   const deps: AppDeps = {
     db, store, stateRepo, outbox, supabase, auth,
     engine: null,
+    timer: null,
     setUserId(userId) {
       deps.engine = new SyncEngine({ supabase, outbox, store, userId, stateRepo });
+      deps.timer = new TimerService({ store, outbox, userId });
+      void deps.timer.init();
     },
   };
   return deps;
