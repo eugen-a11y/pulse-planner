@@ -7,17 +7,10 @@ import {
   createPulseSupabaseClient,
   Outbox,
   SyncEngine,
-  type TokenStorage,
 } from "@pulse/core";
 import { BetterSqliteStore } from "./store/better-sqlite-store.js";
 import { SqliteSyncStateRepo } from "./store/sqlite-sync-state-repo.js";
-
-class FileTokenStorage implements TokenStorage {
-  // populated in Task 9
-  async get(_k: string): Promise<string | null> { return null; }
-  async set(_k: string, _v: string): Promise<void> { /* no-op until Task 9 */ }
-  async clear(): Promise<void> { /* no-op until Task 9 */ }
-}
+import { FileTokenStorage } from "./file-token-storage.js";
 
 export interface AppDeps {
   db: Database.Database;

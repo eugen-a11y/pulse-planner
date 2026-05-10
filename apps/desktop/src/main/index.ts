@@ -1,10 +1,13 @@
 import { app, BrowserWindow } from "electron";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { buildDeps, type AppDeps } from "./deps.js";
+import { registerIpc } from "./ipc.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 let win: BrowserWindow | null = null;
+let deps: AppDeps | null = null;
 
 function createWindow(): void {
   win = new BrowserWindow({
@@ -28,7 +31,12 @@ function createWindow(): void {
   win.once("ready-to-show", () => win?.show());
 }
 
-void app.whenReady().then(createWindow);
+void app.whenReady().then(() => {
+  deps = buildDeps();
+  registerIpc(deps);
+  createWindow();
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
