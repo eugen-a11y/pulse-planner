@@ -5,9 +5,10 @@ import { useTasks } from "../stores/tasks.js";
 import { KanbanColumn } from "./KanbanColumn.js";
 
 const STATUSES: Task["status"][] = ["todo", "in_progress", "done"];
+const EMPTY_IDS: readonly string[] = [];
 
 export function KanbanView({ projectId }: { projectId: string }) {
-  const ids = useTasks((s) => s.byProject[projectId] ?? []);
+  const ids = useTasks((s) => s.byProject[projectId]) ?? EMPTY_IDS;
   const byId = useTasks((s) => s.byId);
   const refresh = useTasks((s) => s.refreshProject);
   const update = useTasks((s) => s.update);

@@ -6,8 +6,10 @@ import { Input } from "../components/ui/input.js";
 import { useToasts } from "../components/ui/toast.js";
 import { CheckSquare } from "lucide-react";
 
+const EMPTY_IDS: readonly string[] = [];
+
 export function ListView({ projectId }: { projectId: string }) {
-  const ids = useTasks((s) => s.byProject[projectId] ?? []);
+  const ids = useTasks((s) => s.byProject[projectId]) ?? EMPTY_IDS;
   const byId = useTasks((s) => s.byId);
   const create = useTasks((s) => s.create);
   const refresh = useTasks((s) => s.refreshProject);
