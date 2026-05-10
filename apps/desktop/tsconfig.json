@@ -5,8 +5,8 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "moduleResolution": "Bundler",
     "outDir": "dist/renderer",
-    "rootDir": "src/renderer",
+    "rootDir": "src",
     "types": ["vite/client"]
   },
-  "include": ["src/renderer/**/*"]
+  "include": ["src/renderer/**/*", "src/main/ipc-types.ts"]
 }
