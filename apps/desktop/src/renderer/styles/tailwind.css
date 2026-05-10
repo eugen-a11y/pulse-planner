@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pulse-blue: #2563EB;
+  --pulse-blue-hover: #1D4ED8;
+  --gray-bg: #FAFAFA;
+  --border: #E5E5E5;
+}
+
+html, body, #root { height: 100%; }
+body { background: var(--gray-bg); }
