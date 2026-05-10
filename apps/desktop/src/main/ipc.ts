@@ -4,7 +4,7 @@ import {
   type Project, type Task, type Tag,
 } from "@pulse/core";
 import type { AppDeps } from "./deps.js";
-import { broadcast, pushAfterMutation, requireUser } from "./ipc-helpers.js";
+import { broadcast, pushAfterMutation, pushSyncStatus, requireUser } from "./ipc-helpers.js";
 
 async function tasksChanged(deps: AppDeps, getWin: () => BrowserWindow | null): Promise<void> {
   broadcast(getWin(), "tasks.changed");
@@ -53,7 +53,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       clientTs: p.updatedAt,
     });
     broadcast(getWin(), "projects.changed");
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return p;
   });
   ipcMain.handle("projects.update", async (_e, id: string, fields: Partial<Project>) => {
@@ -70,7 +70,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       clientTs: ts,
     });
     broadcast(getWin(), "projects.changed");
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return updated;
   });
   ipcMain.handle("projects.delete", async (_e, id: string) => {
@@ -82,7 +82,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: {}, clientTs: ts,
     });
     broadcast(getWin(), "projects.changed");
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
   });
 
   // ─── tasks ───
@@ -127,7 +127,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       clientTs: t.updatedAt,
     });
     void tasksChanged(deps, getWin);
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return t;
   });
 
@@ -145,7 +145,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       clientTs: ts,
     });
     void tasksChanged(deps, getWin);
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return updated;
   });
 
@@ -158,7 +158,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: {}, clientTs: ts,
     });
     void tasksChanged(deps, getWin);
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
   });
 
   ipcMain.handle("tasks.complete", async (_e, id: string) => {
@@ -174,7 +174,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       clientTs: ts,
     });
     void tasksChanged(deps, getWin);
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return updated;
   });
 
@@ -196,7 +196,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       clientTs: tag.updatedAt,
     });
     broadcast(getWin(), "tags.changed");
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return tag;
   });
   ipcMain.handle("tags.attach", async (_e, taskId: string, tagId: string) => {
@@ -209,7 +209,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       clientTs: tt.createdAt,
     });
     broadcast(getWin(), "tags.changed");
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
   });
   ipcMain.handle("tags.detach", async (_e, taskId: string, tagId: string) => {
     requireUser(deps);
@@ -218,9 +218,22 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     broadcast(getWin(), "tags.changed");
   });
 
-  // ─── sync (placeholders, fleshed out later) ───
-  ipcMain.handle("sync.pushNow", async () => { await pushAfterMutation(deps); });
-  ipcMain.handle("sync.pullNow", async () => { if (deps.engine) await deps.engine.pull(); });
+  // ─── sync ───
+  ipcMain.handle("sync.pushNow", async () => { await pushAfterMutation(deps, getWin); });
+  ipcMain.handle("sync.pullNow", async () => {
+    if (!deps.engine) return;
+    try {
+      await deps.engine.pull();
+      await pushSyncStatus(deps, getWin, { lastPullAt: nowIso() });
+    } catch (e) {
+      if (/401|unauthor|jwt/i.test((e as Error).message)) {
+        await deps.auth.signOut();
+        deps.engine = null;
+        getWin()?.webContents.send("auth.expired", null);
+      }
+      await pushSyncStatus(deps, getWin);
+    }
+  });
 
   // ─── time_entries ───
   ipcMain.handle("time_entries.listForTask", async (_e, taskId: string) => {
@@ -232,14 +245,14 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     if (!deps.timer) throw new Error("not signed in");
     const entry = await deps.timer.start(taskId);
     broadcast(getWin(), "timer.current", deps.timer.current());
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return entry;
   });
   ipcMain.handle("time_entries.stop", async () => {
     if (!deps.timer) return null;
     const entry = await deps.timer.stop();
     broadcast(getWin(), "timer.current", deps.timer.current());
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return entry;
   });
 
@@ -274,7 +287,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       },
       clientTs: note.updatedAt,
     });
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return note;
   });
   ipcMain.handle("notes.update", async (_e, id: string, fields: { bodyMd: string }) => {
@@ -289,7 +302,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: { bodyMd: fields.bodyMd, updatedAt: ts },
       clientTs: ts,
     });
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return updated;
   });
   ipcMain.handle("notes.delete", async (_e, id: string) => {
@@ -297,7 +310,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const ts = nowIso();
     await deps.store.softDelete("notes", id, ts);
     await deps.outbox.enqueue({ entityTable: "notes", entityId: id, op: "delete", changedFields: {}, clientTs: ts });
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
   });
 
   // ─── comments ───
@@ -316,7 +329,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: { id: c.id, taskId: c.taskId, bodyMd: c.bodyMd, createdAt: c.createdAt, updatedAt: c.updatedAt, deletedAt: c.deletedAt },
       clientTs: c.updatedAt,
     });
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return c;
   });
   ipcMain.handle("comments.update", async (_e, id: string, fields: { bodyMd: string }) => {
@@ -327,7 +340,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const updated = { ...local, ...fields, updatedAt: ts };
     await deps.store.upsert("comments", updated);
     await deps.outbox.enqueue({ entityTable: "comments", entityId: id, op: "update", changedFields: { bodyMd: fields.bodyMd, updatedAt: ts }, clientTs: ts });
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return updated;
   });
   ipcMain.handle("comments.delete", async (_e, id: string) => {
@@ -335,7 +348,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const ts = nowIso();
     await deps.store.softDelete("comments", id, ts);
     await deps.outbox.enqueue({ entityTable: "comments", entityId: id, op: "delete", changedFields: {}, clientTs: ts });
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
   });
 
   // ─── quick-add ───
@@ -367,7 +380,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: serializeTaskForOutbox(t), clientTs: t.updatedAt,
     });
     void tasksChanged(deps, getWin);
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     void import("./window.js").then(({ hideQuickAdd }) => hideQuickAdd());
     return t;
   });
@@ -385,7 +398,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: { dueDate: next, updatedAt: ts }, clientTs: ts,
     });
     void tasksChanged(deps, getWin);
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     const { rescheduleFromStore } = await import("./notifications.js");
     void rescheduleFromStore(deps);
   });
@@ -437,7 +450,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       },
       clientTs: att.updatedAt,
     });
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
     return att;
   });
   ipcMain.handle("attachments.delete", async (_e, id: string) => {
@@ -449,7 +462,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const ts = nowIso();
     await deps.store.softDelete("attachments", id, ts);
     await deps.outbox.enqueue({ entityTable: "attachments", entityId: id, op: "delete", changedFields: {}, clientTs: ts });
-    void pushAfterMutation(deps);
+    void pushAfterMutation(deps, getWin);
   });
 }
 
