@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { SyncEngine } from "../../src/sync/sync-engine.js";
 import { Outbox } from "../../src/sync/outbox.js";
 import { InMemoryStore } from "../../src/store/in-memory-store.js";
+import { InMemorySyncStateRepo } from "../../src/sync/sync-state-repo.js";
 
 function makeFakeSupabase(rpcImpl: (args: any) => Promise<{ data: any; error: any }>) {
   return {
@@ -176,6 +177,36 @@ describe("SyncEngine.pull", () => {
     await engine.pull(null);
     const got = await store.findById<any>("projects", "p1");
     expect(got!.name).toBe("LOCAL");          // outbox wins
+  });
+});
+
+describe("SyncEngine.pull with SyncStateRepo", () => {
+  it("reads + writes cursor via repo when injected", async () => {
+    const fetched: Record<string, any[]> = {
+      projects: [{ id: "p1", user_id: "u", name: "Hello", color: "#2563eb",
+                   archived: false, sort_order: 0,
+                   created_at: "2026-05-09T00:00:00.000Z",
+                   updated_at: "2026-05-09T00:00:01.000Z",
+                   deleted_at: null }],
+    };
+    const supa = {
+      rpc: vi.fn(),
+      from: (t: string) => ({
+        select: () => ({
+          gt: () => ({
+            eq: () => ({
+              order: () => Promise.resolve({ data: fetched[t] ?? [], error: null }),
+            }),
+          }),
+        }),
+      }),
+    } as any;
+    const store = new InMemoryStore();
+    const stateRepo = new InMemorySyncStateRepo();
+    const engine = new SyncEngine({ supabase: supa, outbox: new Outbox(), store, userId: "u", stateRepo });
+
+    await engine.pull();
+    expect(await stateRepo.getCursor("projects")).toBe("2026-05-09T00:00:01.000Z");
   });
 });
 

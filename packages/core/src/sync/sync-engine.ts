@@ -9,6 +9,7 @@ export interface SyncEngineDeps {
   outbox: Outbox;
   store: LocalStore;
   userId: string;
+  stateRepo?: import("./sync-state-repo.js").SyncStateRepo;
 }
 
 const TABLES: readonly SyncTable[] = [
@@ -68,31 +69,44 @@ export class SyncEngine {
     };
   }
 
-  async pull(sinceIso: string | null): Promise<string> {
-    let maxSeen = sinceIso;
-    const cursor = sinceIso ?? "1970-01-01T00:00:00.000Z";
+  async pull(): Promise<string>;
+  async pull(sinceIso: string | null): Promise<string>;
+  async pull(sinceIso?: string | null): Promise<string> {
+    const repo = this.deps.stateRepo;
+
+    let maxSeen: string | null = null;
     const outboxEntries = await this.deps.outbox.peekAll();
 
     for (const t of CURSOR_TABLES) {
+      const tableCursor = (sinceIso !== undefined)
+        ? sinceIso
+        : repo ? (await repo.getCursor(t)) : null;
+      const sqlCursor = tableCursor ?? "1970-01-01T00:00:00.000Z";
+
       const { data, error } = await this.deps.supabase
         .from(t)
         .select("*")
-        .gt("updated_at", cursor)
+        .gt("updated_at", sqlCursor)
         .eq("user_id", this.deps.userId)
         .order("updated_at", { ascending: true });
       if (error) throw new Error(`pull ${t}: ${error.message}`);
+
       const rows = (data ?? []) as Record<string, unknown>[];
+      let tableMax: string | null = tableCursor;
       for (const row of rows) {
         const camel = snakeToCamelRow(row);
         const local = await this.deps.store.findById<any>(t, camel.id as string);
         const outstanding = collectOutstandingFields(outboxEntries, t, camel.id as string);
         const merged = local && outstanding.length
-          ? mergeRemoteWithOutbox(local, camel as any, outstanding)
+          ? mergeRemoteWithOutbox(local, camel, outstanding)
           : camel;
         await this.deps.store.upsert(t, merged as any);
-        if (!maxSeen || (camel.updatedAt as string) > maxSeen) {
-          maxSeen = camel.updatedAt as string;
-        }
+        const ts = camel.updatedAt as string;
+        if (!tableMax || ts > tableMax) tableMax = ts;
+        if (!maxSeen || ts > maxSeen) maxSeen = ts;
+      }
+      if (repo && sinceIso === undefined && tableMax) {
+        await repo.setCursor(t, tableMax);
       }
     }
     return maxSeen ?? (sinceIso ?? "1970-01-01T00:00:00.000Z");
