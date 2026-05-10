@@ -7,6 +7,7 @@ import { useTags } from "../stores/tags.js";
 import { TodayView } from "../today/TodayView.js";
 import { UpcomingView } from "../today/UpcomingView.js";
 import { ProjectView } from "../project/ProjectView.js";
+import { DetailPane } from "../detail/DetailPane.js";
 
 export function AppShell(): JSX.Element {
   const view = useUi((s) => s.currentView);
@@ -27,7 +28,7 @@ export function AppShell(): JSX.Element {
           <div className="flex-1 min-w-0 bg-white border-r border-[var(--border)]">
             <ViewSlot view={view} />
           </div>
-          {detailOpen && <DetailSlot />}
+          {detailOpen && <DetailPane />}
         </main>
       </div>
       {/* StatusBar + TopBarPill come in later tasks */}
@@ -42,8 +43,4 @@ function ViewSlot({ view }: { view: ReturnType<typeof useUi.getState>["currentVi
     case "project":  return <ProjectView projectId={view.projectId} />;
     case "tag":      return <div className="p-6 text-gray-500">Tag {view.tagId}</div>;
   }
-}
-
-function DetailSlot() {
-  return <div className="w-[380px] border-l border-[var(--border)] p-4">Detail (Task 17)</div>;
 }
