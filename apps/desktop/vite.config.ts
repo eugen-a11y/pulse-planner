@@ -20,7 +20,10 @@ export default defineConfig({
       preload: {
         input: "src/preload.ts",
         vite: {
-          build: { outDir: "dist-electron/preload" },
+          build: {
+            outDir: "dist-electron/preload",
+            rollupOptions: { output: { entryFileNames: "preload.js" } },
+          },
         },
       },
       renderer: {},
