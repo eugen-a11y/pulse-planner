@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LayoutList, KanbanSquare } from "lucide-react";
 import { useProjects } from "../stores/projects.js";
 import { ListView } from "./ListView.js";
+import { KanbanView } from "./KanbanView.js";
 import { cn } from "../lib/cn.js";
 
 export function ProjectView({ projectId }: { projectId: string }) {
@@ -27,7 +28,7 @@ export function ProjectView({ projectId }: { projectId: string }) {
       <div className="flex-1 min-h-0">
         {mode === "list"
           ? <ListView projectId={projectId} />
-          : <div className="p-6 text-gray-500">Kanban (Task 21)</div>}
+          : <KanbanView projectId={projectId} />}
       </div>
     </div>
   );
