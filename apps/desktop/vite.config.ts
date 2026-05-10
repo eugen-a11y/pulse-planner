@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import electron from "vite-plugin-electron/simple";
+import { resolve } from "node:path";
 
 export default defineConfig({
   plugins: [
@@ -11,9 +12,7 @@ export default defineConfig({
         vite: {
           build: {
             outDir: "dist-electron/main",
-            rollupOptions: {
-              external: ["electron", "better-sqlite3", "electron-updater"],
-            },
+            rollupOptions: { external: ["electron", "better-sqlite3", "electron-updater"] },
           },
         },
       },
@@ -29,5 +28,13 @@ export default defineConfig({
       renderer: {},
     }),
   ],
-  build: { outDir: "dist/renderer" },
+  build: {
+    outDir: "dist/renderer",
+    rollupOptions: {
+      input: {
+        index: resolve(__dirname, "index.html"),
+        "quick-add": resolve(__dirname, "src/renderer/quick-add/index.html"),
+      },
+    },
+  },
 });

@@ -332,6 +332,40 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     void pushAfterMutation(deps);
   });
 
+  // ─── quick-add ───
+  ipcMain.on("quickAdd.show", () => {
+    void import("./window.js").then(({ showQuickAddWindow }) => showQuickAddWindow());
+  });
+  ipcMain.handle("quickAdd.parse", async (_e, text: string) => {
+    const userId = requireUser(deps);
+    const projects = await deps.store.listSince("projects", null, { userId });
+    const refs = (projects as any[]).map((p) => ({ id: p.id, name: p.name }));
+    const { parseQuickAddText } = await import("../renderer/lib/quick-add-parser.js");
+    return parseQuickAddText(text, refs);
+  });
+  ipcMain.handle("quickAdd.submit", async (_e, parsed: { title: string; projectId: string | null; dueDate: string | null; priority: 1|2|3|4; tagNames: string[] }) => {
+    const userId = requireUser(deps);
+    let projectId = parsed.projectId;
+    if (!projectId) {
+      const projects = await deps.store.listSince("projects", null, { userId });
+      projectId = (projects[0] as any)?.id;
+      if (!projectId) throw new Error("kein Projekt vorhanden — erstelle erst eines");
+    }
+    const t = makeTask({
+      userId, projectId, title: parsed.title,
+      dueDate: parsed.dueDate, priority: parsed.priority,
+    });
+    await deps.store.upsert("tasks", t);
+    await deps.outbox.enqueue({
+      entityTable: "tasks", entityId: t.id, op: "insert",
+      changedFields: serializeTaskForOutbox(t), clientTs: t.updatedAt,
+    });
+    broadcast(getWin(), "tasks.changed");
+    void pushAfterMutation(deps);
+    void import("./window.js").then(({ hideQuickAdd }) => hideQuickAdd());
+    return t;
+  });
+
   // ─── attachments ───
   ipcMain.handle("attachments.listForTask", async (_e, taskId: string) => {
     const userId = requireUser(deps);
