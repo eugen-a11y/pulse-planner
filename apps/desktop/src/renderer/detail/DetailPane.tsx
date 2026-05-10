@@ -6,6 +6,9 @@ import { TaskMeta } from "./TaskMeta.js";
 import { TaskBody } from "./TaskBody.js";
 import { SubtaskList } from "./SubtaskList.js";
 import { TimeEntryList } from "./TimeEntryList.js";
+import { NotePane } from "./NotePane.js";
+import { CommentList } from "./CommentList.js";
+import { AttachmentList } from "./AttachmentList.js";
 
 export function DetailPane(): JSX.Element | null {
   const id = useUi((s) => s.selectedTaskId);
@@ -27,7 +30,9 @@ export function DetailPane(): JSX.Element | null {
         <TaskBody task={task} />
         <SubtaskList parent={task} />
         <TimeEntryList task={task} />
-        {/* CommentList/AttachmentList/NotePane in Task 20 */}
+        <NotePane task={task} />
+        <CommentList task={task} />
+        <AttachmentList task={task} />
       </div>
     </aside>
   );

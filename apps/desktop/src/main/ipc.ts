@@ -241,6 +241,152 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
   ipcMain.handle("timer.current", async () => {
     return deps.timer?.current() ?? null;
   });
+
+  // ─── notes ───
+  ipcMain.handle("notes.listForTask", async (_e, taskId: string) => {
+    const userId = requireUser(deps);
+    const all = await deps.store.listSince("notes", null, { userId });
+    return (all as any[]).filter((n) => n.taskId === taskId);
+  });
+  ipcMain.handle("notes.listForProject", async (_e, projectId: string) => {
+    const userId = requireUser(deps);
+    const all = await deps.store.listSince("notes", null, { userId });
+    return (all as any[]).filter((n) => n.projectId === projectId);
+  });
+  ipcMain.handle("notes.create", async (_e, input: { projectId?: string; taskId?: string; bodyMd: string }) => {
+    const userId = requireUser(deps);
+    const { makeProjectNote, makeTaskNote } = await import("@pulse/core");
+    const note = input.taskId
+      ? makeTaskNote({ userId, taskId: input.taskId, bodyMd: input.bodyMd })
+      : makeProjectNote({ userId, projectId: input.projectId!, bodyMd: input.bodyMd });
+    await deps.store.upsert("notes", note as any);
+    await deps.outbox.enqueue({
+      entityTable: "notes", entityId: note.id, op: "insert",
+      changedFields: {
+        id: note.id, projectId: note.projectId, taskId: note.taskId, bodyMd: note.bodyMd,
+        createdAt: note.createdAt, updatedAt: note.updatedAt, deletedAt: note.deletedAt,
+      },
+      clientTs: note.updatedAt,
+    });
+    void pushAfterMutation(deps);
+    return note;
+  });
+  ipcMain.handle("notes.update", async (_e, id: string, fields: { bodyMd: string }) => {
+    requireUser(deps);
+    const local = await deps.store.findById<any>("notes", id);
+    if (!local) throw new Error("note not found");
+    const ts = nowIso();
+    const updated = { ...local, ...fields, updatedAt: ts };
+    await deps.store.upsert("notes", updated);
+    await deps.outbox.enqueue({
+      entityTable: "notes", entityId: id, op: "update",
+      changedFields: { bodyMd: fields.bodyMd, updatedAt: ts },
+      clientTs: ts,
+    });
+    void pushAfterMutation(deps);
+    return updated;
+  });
+  ipcMain.handle("notes.delete", async (_e, id: string) => {
+    requireUser(deps);
+    const ts = nowIso();
+    await deps.store.softDelete("notes", id, ts);
+    await deps.outbox.enqueue({ entityTable: "notes", entityId: id, op: "delete", changedFields: {}, clientTs: ts });
+    void pushAfterMutation(deps);
+  });
+
+  // ─── comments ───
+  ipcMain.handle("comments.listForTask", async (_e, taskId: string) => {
+    const userId = requireUser(deps);
+    const all = await deps.store.listSince("comments", null, { userId });
+    return (all as any[]).filter((c) => c.taskId === taskId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  });
+  ipcMain.handle("comments.create", async (_e, input: { taskId: string; bodyMd: string }) => {
+    const userId = requireUser(deps);
+    const { makeComment } = await import("@pulse/core");
+    const c = makeComment({ userId, taskId: input.taskId, bodyMd: input.bodyMd });
+    await deps.store.upsert("comments", c);
+    await deps.outbox.enqueue({
+      entityTable: "comments", entityId: c.id, op: "insert",
+      changedFields: { id: c.id, taskId: c.taskId, bodyMd: c.bodyMd, createdAt: c.createdAt, updatedAt: c.updatedAt, deletedAt: c.deletedAt },
+      clientTs: c.updatedAt,
+    });
+    void pushAfterMutation(deps);
+    return c;
+  });
+  ipcMain.handle("comments.update", async (_e, id: string, fields: { bodyMd: string }) => {
+    requireUser(deps);
+    const local = await deps.store.findById<any>("comments", id);
+    if (!local) throw new Error("comment not found");
+    const ts = nowIso();
+    const updated = { ...local, ...fields, updatedAt: ts };
+    await deps.store.upsert("comments", updated);
+    await deps.outbox.enqueue({ entityTable: "comments", entityId: id, op: "update", changedFields: { bodyMd: fields.bodyMd, updatedAt: ts }, clientTs: ts });
+    void pushAfterMutation(deps);
+    return updated;
+  });
+  ipcMain.handle("comments.delete", async (_e, id: string) => {
+    requireUser(deps);
+    const ts = nowIso();
+    await deps.store.softDelete("comments", id, ts);
+    await deps.outbox.enqueue({ entityTable: "comments", entityId: id, op: "delete", changedFields: {}, clientTs: ts });
+    void pushAfterMutation(deps);
+  });
+
+  // ─── attachments ───
+  ipcMain.handle("attachments.listForTask", async (_e, taskId: string) => {
+    const userId = requireUser(deps);
+    const all = await deps.store.listSince("attachments", null, { userId });
+    return (all as any[]).filter((a) => a.taskId === taskId);
+  });
+  ipcMain.handle("attachments.upload", async (_e, input: { taskId: string; localPath: string }) => {
+    const userId = requireUser(deps);
+    const { makeAttachment } = await import("@pulse/core");
+    const { readFileSync, statSync } = await import("node:fs");
+    const { basename } = await import("node:path");
+    const fileBytes = readFileSync(input.localPath);
+    const stat = statSync(input.localPath);
+    const filename = basename(input.localPath);
+    const mime = guessMime(filename);
+    const storagePath = `attachments/${userId}/${input.taskId}/${Date.now()}-${filename}`;
+    const { error } = await deps.supabase.storage.from("attachments").upload(storagePath, fileBytes, { contentType: mime, upsert: false });
+    if (error) throw new Error(`upload failed: ${error.message}`);
+    const att = makeAttachment({
+      userId, taskId: input.taskId, storagePath, filename, mime, sizeBytes: stat.size,
+    });
+    await deps.store.upsert("attachments", att);
+    await deps.outbox.enqueue({
+      entityTable: "attachments", entityId: att.id, op: "insert",
+      changedFields: {
+        id: att.id, taskId: att.taskId, storagePath: att.storagePath, filename: att.filename,
+        mime: att.mime, sizeBytes: att.sizeBytes,
+        createdAt: att.createdAt, updatedAt: att.updatedAt, deletedAt: att.deletedAt,
+      },
+      clientTs: att.updatedAt,
+    });
+    void pushAfterMutation(deps);
+    return att;
+  });
+  ipcMain.handle("attachments.delete", async (_e, id: string) => {
+    requireUser(deps);
+    const local = await deps.store.findById<any>("attachments", id);
+    if (local?.storagePath) {
+      await deps.supabase.storage.from("attachments").remove([local.storagePath]);
+    }
+    const ts = nowIso();
+    await deps.store.softDelete("attachments", id, ts);
+    await deps.outbox.enqueue({ entityTable: "attachments", entityId: id, op: "delete", changedFields: {}, clientTs: ts });
+    void pushAfterMutation(deps);
+  });
+}
+
+function guessMime(filename: string): string {
+  const ext = filename.toLowerCase().split(".").pop();
+  const map: Record<string, string> = {
+    png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp",
+    pdf: "application/pdf", txt: "text/plain", md: "text/markdown",
+    json: "application/json", csv: "text/csv",
+  };
+  return ext ? (map[ext] ?? "application/octet-stream") : "application/octet-stream";
 }
 
 function serializeTaskForOutbox(t: Task): Record<string, unknown> {
