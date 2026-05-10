@@ -93,6 +93,12 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     return filter.projectId ? all.filter((t) => t.projectId === filter.projectId) : all;
   });
 
+  ipcMain.handle("tasks.listInbox", async () => {
+    const userId = requireUser(deps);
+    const all = await deps.store.listSince<Task>("tasks", null, { userId });
+    return all.filter((t) => t.projectId === null);
+  });
+
   ipcMain.handle("tasks.listToday", async () => {
     const userId = requireUser(deps);
     const all = await deps.store.listSince<Task>("tasks", null, { userId });
@@ -115,7 +121,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
   });
 
   ipcMain.handle("tasks.create", async (_e, input: {
-    projectId: string; title: string;
+    projectId: string | null; title: string;
     dueDate?: string | null; priority?: 1 | 2 | 3 | 4;
     parentTaskId?: string | null; description?: string | null;
   }) => {
@@ -365,14 +371,9 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
   });
   ipcMain.handle("quickAdd.submit", async (_e, parsed: { title: string; projectId: string | null; dueDate: string | null; priority: 1|2|3|4; tagNames: string[] }) => {
     const userId = requireUser(deps);
-    let projectId = parsed.projectId;
-    if (!projectId) {
-      const projects = await deps.store.listSince("projects", null, { userId });
-      projectId = (projects[0] as any)?.id;
-      if (!projectId) throw new Error("kein Projekt vorhanden — erstelle erst eines");
-    }
+    // No @projekt → projectId stays null → task lands in Inbox.
     const t = makeTask({
-      userId, projectId, title: parsed.title,
+      userId, projectId: parsed.projectId, title: parsed.title,
       dueDate: parsed.dueDate, priority: parsed.priority,
     });
     await deps.store.upsert("tasks", t);

@@ -13,7 +13,11 @@ export function SubtaskList({ parent }: { parent: Task }) {
   const [title, setTitle] = useState("");
 
   async function refresh() {
-    const all = await api.tasks.list({ projectId: parent.projectId });
+    // Inbox tasks (projectId=null) → fetch the unfiltered list and filter locally;
+    // tasks.list with projectId omitted returns all tasks for the user.
+    const all = parent.projectId
+      ? await api.tasks.list({ projectId: parent.projectId })
+      : await api.tasks.list({});
     setChildren(all.filter((t) => t.parentTaskId === parent.id && !t.deletedAt));
   }
   useEffect(() => { void refresh(); }, [parent.id]);

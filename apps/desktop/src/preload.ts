@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld("pulse", {
     list: invoke("tasks.list"),
     listToday: invoke("tasks.listToday"),
     listUpcoming: invoke("tasks.listUpcoming"),
+    listInbox: invoke("tasks.listInbox"),
     create: invoke("tasks.create"),
     update: invoke("tasks.update"),
     delete: invoke("tasks.delete"),

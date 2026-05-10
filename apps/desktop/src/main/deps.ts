@@ -16,13 +16,52 @@ import { TimerService } from "./timer.js";
 // inside the JS bundle — no runtime fs read, works equally in dev and packaged ASAR.
 import migrationSql from "./store/migrations/001_init.sql?raw";
 
-// Idempotent column-additions that mirror Postgres migrations on the cloud side.
-// SQLite has no `ADD COLUMN IF NOT EXISTS`, so we PRAGMA-check before issuing each ALTER.
+// Idempotent additive schema changes that mirror Postgres migrations on cloud.
+// SQLite has no `ADD COLUMN IF NOT EXISTS` and no `ALTER COLUMN`, so we
+// PRAGMA-check first and either ADD COLUMN or rebuild a table as needed.
 function applyAdditiveMigrations(db: Database.Database): void {
+  // 20260511000001 — projects.due_date / description
   const projectCols = db.prepare("PRAGMA table_info(projects)").all() as Array<{ name: string }>;
-  const has = (col: string) => projectCols.some((c) => c.name === col);
-  if (!has("due_date"))    db.exec("ALTER TABLE projects ADD COLUMN due_date TEXT");
-  if (!has("description")) db.exec("ALTER TABLE projects ADD COLUMN description TEXT");
+  const projHas = (col: string) => projectCols.some((c) => c.name === col);
+  if (!projHas("due_date"))    db.exec("ALTER TABLE projects ADD COLUMN due_date TEXT");
+  if (!projHas("description")) db.exec("ALTER TABLE projects ADD COLUMN description TEXT");
+
+  // 20260511000002 — tasks.project_id NOT NULL → nullable (Inbox).
+  // SQLite can only drop NOT NULL via table rebuild.
+  const taskCols = db.prepare("PRAGMA table_info(tasks)").all() as Array<{ name: string; notnull: number }>;
+  const projectIdCol = taskCols.find((c) => c.name === "project_id");
+  if (projectIdCol && projectIdCol.notnull === 1) {
+    db.exec(`
+      PRAGMA foreign_keys = OFF;
+      BEGIN TRANSACTION;
+      CREATE TABLE tasks_new (
+        id                    TEXT PRIMARY KEY,
+        user_id               TEXT NOT NULL,
+        project_id            TEXT,
+        parent_task_id        TEXT,
+        title                 TEXT NOT NULL,
+        description           TEXT,
+        status                TEXT NOT NULL,
+        priority              INTEGER NOT NULL,
+        due_date              TEXT,
+        completed_at          TEXT,
+        sort_order            INTEGER NOT NULL,
+        recurrence_rule       TEXT,
+        recurrence_parent_id  TEXT,
+        created_at            TEXT NOT NULL,
+        updated_at            TEXT NOT NULL,
+        deleted_at            TEXT
+      );
+      INSERT INTO tasks_new SELECT * FROM tasks;
+      DROP TABLE tasks;
+      ALTER TABLE tasks_new RENAME TO tasks;
+      CREATE INDEX IF NOT EXISTS tasks_user_project ON tasks (user_id, project_id);
+      CREATE INDEX IF NOT EXISTS tasks_user_due     ON tasks (user_id, due_date);
+      CREATE INDEX IF NOT EXISTS tasks_user_updated ON tasks (user_id, updated_at);
+      COMMIT;
+      PRAGMA foreign_keys = ON;
+    `);
+  }
 }
 
 export interface AppDeps {

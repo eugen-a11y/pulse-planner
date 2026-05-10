@@ -88,6 +88,7 @@ async function loadAllTasks(): Promise<void> {
   const byProject: Record<string, string[]> = {};
   for (const t of list) {
     idx[t.id] = t;
+    if (t.projectId === null) continue;     // Inbox tasks are tracked in inboxIds, not byProject.
     if (!byProject[t.projectId]) byProject[t.projectId] = [];
     byProject[t.projectId]!.push(t.id);
   }

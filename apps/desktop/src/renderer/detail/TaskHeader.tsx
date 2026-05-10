@@ -5,7 +5,7 @@ import { useProjects } from "../stores/projects.js";
 import { useToasts } from "../components/ui/toast.js";
 
 export function TaskHeader({ task }: { task: Task }) {
-  const project = useProjects((s) => s.byId[task.projectId]);
+  const project = useProjects((s) => (task.projectId ? s.byId[task.projectId] : undefined));
   const update = useTasks((s) => s.update);
   const push = useToasts((s) => s.push);
   const [title, setTitle] = useState(task.title);
@@ -23,7 +23,7 @@ export function TaskHeader({ task }: { task: Task }) {
 
   return (
     <div>
-      <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">{project?.name ?? "—"}</div>
+      <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">{task.projectId === null ? "Inbox" : (project?.name ?? "—")}</div>
       {editing ? (
         <input
           autoFocus value={title}

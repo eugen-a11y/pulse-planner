@@ -21,7 +21,7 @@ const RRuleString = z.string().refine(
 export const TaskSchema = z.object({
   id: z.string().min(1),
   userId: z.string().min(1),
-  projectId: z.string().min(1),
+  projectId: z.string().min(1).nullable(),
   parentTaskId: z.string().nullable(),
   title: z.string().min(1).max(500),
   description: z.string().nullable(),
@@ -41,7 +41,7 @@ export type Task = z.infer<typeof TaskSchema>;
 
 export interface MakeTaskInput {
   userId: string;
-  projectId: string;
+  projectId: string | null;
   title: string;
   description?: string | null;
   parentTaskId?: string | null;
@@ -58,7 +58,7 @@ export function makeTask(input: MakeTaskInput): Task {
   return {
     id: newId(),
     userId: input.userId,
-    projectId: input.projectId,
+    projectId: input.projectId ?? null,
     parentTaskId: input.parentTaskId ?? null,
     title: input.title,
     description: input.description ?? null,

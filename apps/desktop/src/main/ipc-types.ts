@@ -45,8 +45,9 @@ export interface PulseApi {
     list(filter: { projectId?: string }): Promise<Task[]>;
     listToday(): Promise<Task[]>;
     listUpcoming(): Promise<Task[]>;
+    listInbox(): Promise<Task[]>;
     create(input: {
-      projectId: string; title: string;
+      projectId: string | null; title: string;
       dueDate?: string | null; priority?: 1 | 2 | 3 | 4;
       parentTaskId?: string | null; description?: string | null;
     }): Promise<Task>;

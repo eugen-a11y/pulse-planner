@@ -4,6 +4,7 @@ export type ViewKey =
   | { kind: "dashboard" }
   | { kind: "today" }
   | { kind: "upcoming" }
+  | { kind: "inbox" }
   | { kind: "project"; projectId: string }
   | { kind: "tag"; tagId: string };
 

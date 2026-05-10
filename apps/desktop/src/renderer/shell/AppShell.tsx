@@ -7,6 +7,7 @@ import { useTags } from "../stores/tags.js";
 import { DashboardView } from "../dashboard/DashboardView.js";
 import { TodayView } from "../today/TodayView.js";
 import { UpcomingView } from "../today/UpcomingView.js";
+import { InboxView } from "../inbox/InboxView.js";
 import { ProjectView } from "../project/ProjectView.js";
 import { DetailPane } from "../detail/DetailPane.js";
 import { TopBarPill } from "./TopBarPill.js";
@@ -23,6 +24,7 @@ export function AppShell(): JSX.Element {
     void useTags.getState().refresh();
     void useTasks.getState().refreshToday();
     void useTasks.getState().refreshUpcoming();
+    void useTasks.getState().refreshInbox();
   }, []);
 
   return (
@@ -49,6 +51,7 @@ function ViewSlot({ view }: { view: ReturnType<typeof useUi.getState>["currentVi
     case "dashboard": return <DashboardView />;
     case "today":     return <TodayView />;
     case "upcoming":  return <UpcomingView />;
+    case "inbox":     return <InboxView />;
     case "project":   return <ProjectView projectId={view.projectId} />;
     case "tag":       return <div className="p-6 text-gray-500">Tag {view.tagId}</div>;
   }

@@ -8,6 +8,7 @@ export function SystemViews(): JSX.Element {
   const setView = useUi((s) => s.setView);
   const todayCount = useTasks((s) => s.todayIds.length);
   const upcomingCount = useTasks((s) => s.upcomingIds.length);
+  const inboxCount = useTasks((s) => s.inboxIds.length);
 
   return (
     <div className="flex flex-col px-2">
@@ -17,8 +18,8 @@ export function SystemViews(): JSX.Element {
         icon={<Star size={16} />} label="Today" count={todayCount} />
       <Item active={view.kind === "upcoming"} onClick={() => setView({ kind: "upcoming" })}
         icon={<Calendar size={16} />} label="Upcoming" count={upcomingCount} />
-      <Item active={false} onClick={() => {/* Inbox view = tasks without project; deferred to v1.x */}}
-        icon={<Inbox size={16} />} label="Inbox" />
+      <Item active={view.kind === "inbox"} onClick={() => setView({ kind: "inbox" })}
+        icon={<Inbox size={16} />} label="Inbox" count={inboxCount} />
     </div>
   );
 }

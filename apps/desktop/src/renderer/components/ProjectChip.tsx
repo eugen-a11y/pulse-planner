@@ -1,7 +1,15 @@
+import { Inbox } from "lucide-react";
 import { useProjects } from "../stores/projects.js";
 
-export function ProjectChip({ projectId }: { projectId: string }) {
-  const project = useProjects((s) => s.byId[projectId]);
+export function ProjectChip({ projectId }: { projectId: string | null }) {
+  const project = useProjects((s) => (projectId ? s.byId[projectId] : undefined));
+  if (projectId === null) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+        <Inbox size={10} /> Inbox
+      </span>
+    );
+  }
   if (!project) return null;
   return (
     <span className="inline-flex items-center gap-1 text-xs text-gray-500">
