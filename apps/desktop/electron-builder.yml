@@ -1,0 +1,27 @@
+appId: dev.pulsehamburg.pulse
+productName: Pulse
+copyright: © 2026 Eugen Reinfeld
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - assets/**/*
+  - package.json
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.ico
+  signAndEditExecutable: false
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  artifactName: Pulse-Setup-${version}.${ext}
+publish:
+  provider: github
+  owner: PLACEHOLDER_GITHUB_OWNER
+  repo: pulse-planner
