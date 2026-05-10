@@ -1,4 +1,5 @@
 import { BrowserWindow, app } from "electron";
+import { appendFileSync } from "node:fs";
 import { join } from "node:path";
 
 // vite-plugin-electron bundles this file; emitted at dist-electron/main/.
@@ -8,6 +9,11 @@ function dist(...segments: string[]): string {
 }
 function rendererDist(...segments: string[]): string {
   return join(app.getAppPath(), "dist", "renderer", ...segments);
+}
+
+const traceLog = (): string => join(app.getPath("userData"), "boot-trace.log");
+function trace(line: string): void {
+  try { appendFileSync(traceLog(), `${new Date().toISOString()} [window] ${line}\n`); } catch { /* */ }
 }
 
 export function createMainWindow(): BrowserWindow {
@@ -24,12 +30,37 @@ export function createMainWindow(): BrowserWindow {
       nodeIntegration: false,
     },
   });
+
+  win.webContents.on("did-fail-load", (_e, code, desc, url) => {
+    trace(`did-fail-load code=${code} desc="${desc}" url=${url}`);
+    win.show();
+  });
+  win.webContents.on("render-process-gone", (_e, details) => {
+    trace(`render-process-gone reason=${details.reason} exitCode=${details.exitCode}`);
+  });
+  win.webContents.on("preload-error", (_e, path, err) => {
+    trace(`preload-error path=${path} err=${err.message}`);
+  });
+  win.webContents.on("did-finish-load", () => trace("did-finish-load"));
+  win.webContents.on("dom-ready", () => trace("dom-ready"));
+
+  const indexPath = rendererDist("index.html");
+  trace(`createMainWindow loadFile path=${indexPath}`);
   if (process.env.VITE_DEV_SERVER_URL) {
-    void win.loadURL(process.env.VITE_DEV_SERVER_URL);
+    void win.loadURL(process.env.VITE_DEV_SERVER_URL).then(() => trace("dev loadURL ok")).catch((e) => trace(`dev loadURL fail: ${e.message}`));
   } else {
-    void win.loadFile(rendererDist("index.html"));
+    void win.loadFile(indexPath).then(() => trace("loadFile ok")).catch((e) => trace(`loadFile fail: ${e.message}`));
   }
-  win.once("ready-to-show", () => win.show());
+  win.once("ready-to-show", () => { trace("ready-to-show fired"); win.show(); });
+  setTimeout(() => {
+    if (!win.isDestroyed()) {
+      trace(`3s timeout: isVisible=${win.isVisible()} isDestroyed=${win.isDestroyed()}`);
+      if (!win.isVisible()) {
+        win.show();
+        win.webContents.openDevTools({ mode: "detach" });
+      }
+    }
+  }, 3000);
   return win;
 }
 

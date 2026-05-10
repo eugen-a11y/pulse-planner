@@ -1,6 +1,5 @@
 import Database from "better-sqlite3";
 import { app } from "electron";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import WebSocket from "ws";
 import {
@@ -13,6 +12,9 @@ import { BetterSqliteStore } from "./store/better-sqlite-store.js";
 import { SqliteSyncStateRepo } from "./store/sqlite-sync-state-repo.js";
 import { FileTokenStorage } from "./file-token-storage.js";
 import { TimerService } from "./timer.js";
+// Vite ?raw imports inline the file contents at build time, so the SQL ships
+// inside the JS bundle — no runtime fs read, works equally in dev and packaged ASAR.
+import migrationSql from "./store/migrations/001_init.sql?raw";
 
 export interface AppDeps {
   db: Database.Database;
@@ -31,13 +33,7 @@ export function buildDeps(): AppDeps {
   const anonKey = process.env.SUPABASE_ANON_KEY ?? "";
   const dbPath = join(app.getPath("userData"), "pulse.db");
   const db = new Database(dbPath);
-  // Migration SQL is shipped at apps/desktop/src/main/store/migrations/001_init.sql
-  // and the bundled main runs from dist-electron/main; resolve via app root.
-  const migration = readFileSync(
-    join(app.getAppPath(), "src", "main", "store", "migrations", "001_init.sql"),
-    "utf8",
-  );
-  db.exec(migration);
+  db.exec(migrationSql);
 
   const store = new BetterSqliteStore(db);
   const stateRepo = new SqliteSyncStateRepo(db);
