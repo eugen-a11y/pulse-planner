@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { AuthScreen } from "./auth/AuthScreen.js";
 import { useAuth } from "./stores/auth.js";
 import { ToastStack } from "./components/ui/toast.js";
+import { AppShell } from "./shell/AppShell.js";
 
 export function App(): JSX.Element {
   const { session, loading, restore } = useAuth();
@@ -15,7 +16,7 @@ export function App(): JSX.Element {
     <ToastStack />
   </>);
   return (<>
-    <div className="h-full flex items-center justify-center text-2xl text-pulse">Signed in as {session.user.email ?? session.user.id}</div>
+    <AppShell />
     <ToastStack />
   </>);
 }
