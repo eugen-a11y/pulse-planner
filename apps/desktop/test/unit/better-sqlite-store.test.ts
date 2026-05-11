@@ -1,18 +1,12 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { BetterSqliteStore } from "../../src/main/store/better-sqlite-store.js";
 import { SqliteSyncStateRepo } from "../../src/main/store/sqlite-sync-state-repo.js";
-import { makeProject, makeTask } from "@pulse/core";
+import { makeProject, makeTask, ALL_DDL } from "@pulse/core";
 
 function freshDb(): Database.Database {
   const db = new Database(":memory:");
-  const sql = readFileSync(
-    join(__dirname, "..", "..", "src", "main", "store", "migrations", "001_init.sql"),
-    "utf8",
-  );
-  db.exec(sql);
+  db.exec(ALL_DDL);
   return db;
 }
 

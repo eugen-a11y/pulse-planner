@@ -7,14 +7,12 @@ import {
   createPulseSupabaseClient,
   Outbox,
   SyncEngine,
+  ALL_DDL,
 } from "@pulse/core";
 import { BetterSqliteStore } from "./store/better-sqlite-store.js";
 import { SqliteSyncStateRepo } from "./store/sqlite-sync-state-repo.js";
 import { FileTokenStorage } from "./file-token-storage.js";
 import { TimerService } from "./timer.js";
-// Vite ?raw imports inline the file contents at build time, so the SQL ships
-// inside the JS bundle — no runtime fs read, works equally in dev and packaged ASAR.
-import migrationSql from "./store/migrations/001_init.sql?raw";
 
 // Idempotent additive schema changes that mirror Postgres migrations on cloud.
 // SQLite has no `ADD COLUMN IF NOT EXISTS` and no `ALTER COLUMN`, so we
@@ -84,7 +82,7 @@ export function buildDeps(): AppDeps {
   const anonKey = process.env.SUPABASE_ANON_KEY ?? "sb_publishable_nTaAenxeN3AgjrqUxb3SLw_ERv_wD3u";
   const dbPath = join(app.getPath("userData"), "pulse.db");
   const db = new Database(dbPath);
-  db.exec(migrationSql);
+  db.exec(ALL_DDL);
   applyAdditiveMigrations(db);
 
   const store = new BetterSqliteStore(db);

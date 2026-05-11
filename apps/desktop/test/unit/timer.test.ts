@@ -1,15 +1,12 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { Outbox } from "@pulse/core";
+import { Outbox, ALL_DDL } from "@pulse/core";
 import { BetterSqliteStore } from "../../src/main/store/better-sqlite-store.js";
 import { TimerService } from "../../src/main/timer.js";
 
 function freshDb(): Database.Database {
   const db = new Database(":memory:");
-  const sql = readFileSync(join(__dirname, "..", "..", "src", "main", "store", "migrations", "001_init.sql"), "utf8");
-  db.exec(sql);
+  db.exec(ALL_DDL);
   return db;
 }
 
