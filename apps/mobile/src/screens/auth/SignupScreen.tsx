@@ -50,7 +50,7 @@ export function SignupScreen(): JSX.Element {
     setBusy(true);
     try {
       await useAuth.getState().signUp(email.trim(), pw, rememberMe);
-      // Route guard in app/_layout.tsx will redirect to /(tabs)/today.
+      router.replace("/(tabs)/today");
     } catch (e) {
       setError((e as Error).message);
     } finally {

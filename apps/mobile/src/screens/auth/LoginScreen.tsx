@@ -53,7 +53,7 @@ export function LoginScreen(): JSX.Element {
     setBusy(true);
     try {
       await useAuth.getState().signIn(email.trim(), pw, rememberMe);
-      // Route guard in app/_layout.tsx will redirect to /(tabs)/today.
+      router.replace("/(tabs)/today");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -71,6 +71,9 @@ export function LoginScreen(): JSX.Element {
       });
       if (r.success) {
         await useAuth.getState().restore();
+        router.replace("/(tabs)/today");
+      } else if (r.error && r.error !== "user_cancel") {
+        setError("Face ID fehlgeschlagen: " + r.error);
       }
     } catch (e) {
       setError((e as Error).message);
