@@ -3,3 +3,8 @@ declare module "*?raw" {
   const content: string;
   export default content;
 }
+
+declare module "*.ico" {
+  const url: string;
+  export default url;
+}

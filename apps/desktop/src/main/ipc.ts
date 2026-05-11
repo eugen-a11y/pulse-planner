@@ -180,6 +180,47 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
       changedFields: { status: "done", completedAt: ts, updatedAt: ts },
       clientTs: ts,
     });
+    // Recurrence: if the completed task carries an RRULE, spawn the next occurrence.
+    // Fall back to "now" if the task has no due date so weekly-without-date still works.
+    if (local.recurrenceRule && local.recurrenceRule.trim()) {
+      try {
+        const baseDate = local.dueDate ? new Date(local.dueDate) : new Date();
+        const { rrulestr } = await import("rrule");
+        // Anchor the rule to the base date via DTSTART so .after() resolves
+        // relative to the task's own date (otherwise rrule defaults to "now").
+        const dtstart = baseDate.toISOString().replace(/[-:]|\.\d{3}/g, "");
+        const rule = rrulestr(`DTSTART:${dtstart}\nRRULE:${local.recurrenceRule.trim()}`);
+        const next = rule.after(baseDate, false);
+        if (next) {
+          const child = makeTask({
+            userId,
+            projectId: local.projectId,
+            title: local.title,
+            description: local.description,
+            priority: local.priority as 1 | 2 | 3 | 4,
+            dueDate: next.toISOString(),
+            parentTaskId: local.parentTaskId,
+            recurrenceRule: local.recurrenceRule,
+            recurrenceParentId: local.recurrenceParentId ?? local.id,
+            sortOrder: local.sortOrder,
+          });
+          await deps.store.upsert("tasks", child);
+          await deps.outbox.enqueue({
+            entityTable: "tasks", entityId: child.id, op: "insert",
+            changedFields: serializeTaskForOutbox(child),
+            clientTs: child.updatedAt,
+          });
+        }
+      } catch (e) {
+        // Log so we can diagnose — silent swallow is what bit us before.
+        try {
+          const { appendFileSync } = await import("node:fs");
+          const { join } = await import("node:path");
+          appendFileSync(join(app.getPath("userData"), "boot-trace.log"),
+            `${new Date().toISOString()} [recurrence] spawn FAIL for task ${id}: ${(e as Error).message}\n`);
+        } catch { /* */ }
+      }
+    }
     void tasksChanged(deps, getWin);
     void pushAfterMutation(deps, getWin);
     return updated;
@@ -218,11 +259,29 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     broadcast(getWin(), "tags.changed");
     void pushAfterMutation(deps, getWin);
   });
+  ipcMain.handle("tags.delete", async (_e, id: string) => {
+    requireUser(deps);
+    const ts = nowIso();
+    // Soft-delete the tag itself + remove all task↔tag links (task_tags has no soft-delete column).
+    await deps.store.softDelete("tags", id, ts);
+    deps.db.prepare("DELETE FROM task_tags WHERE tag_id = ?").run(id);
+    await deps.outbox.enqueue({
+      entityTable: "tags", entityId: id, op: "delete",
+      changedFields: {}, clientTs: ts,
+    });
+    broadcast(getWin(), "tags.changed");
+    void pushAfterMutation(deps, getWin);
+  });
   ipcMain.handle("tags.detach", async (_e, taskId: string, tagId: string) => {
     requireUser(deps);
     deps.db.prepare("DELETE FROM task_tags WHERE task_id = ? AND tag_id = ?").run(taskId, tagId);
     // task_tags has no soft-delete + no updated_at; for v1 we rely on realtime sync.
     broadcast(getWin(), "tags.changed");
+  });
+  ipcMain.handle("tasks.tagsForTask", async (_e, taskId: string) => {
+    requireUser(deps);
+    const rows = deps.db.prepare("SELECT tag_id FROM task_tags WHERE task_id = ?").all(taskId) as Array<{ tag_id: string }>;
+    return rows.map((r) => r.tag_id);
   });
 
   // ─── sync ───

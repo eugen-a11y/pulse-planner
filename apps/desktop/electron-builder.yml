@@ -1,6 +1,6 @@
 appId: dev.pulsehamburg.pulse
 productName: Pulse
-copyright: © 2026 Eugen Reinfeld
+copyright: Pulse by Eugen Reinfeld
 directories:
   output: release
   buildResources: build
@@ -15,7 +15,7 @@ win:
     - target: nsis
       arch: [x64]
   icon: build/icon.ico
-  signAndEditExecutable: false
+  signAndEditExecutable: true
 nsis:
   oneClick: true
   perMachine: false

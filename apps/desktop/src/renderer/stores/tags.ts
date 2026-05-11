@@ -7,6 +7,7 @@ interface TagsState {
   order: string[];
   refresh: () => Promise<void>;
   create: (input: { name: string; color?: string }) => Promise<Tag>;
+  remove: (id: string) => Promise<void>;
   attach: (taskId: string, tagId: string) => Promise<void>;
   detach: (taskId: string, tagId: string) => Promise<void>;
 }
@@ -25,6 +26,10 @@ export const useTags = create<TagsState>((set, get) => ({
     const t = await api.tags.create(input);
     await get().refresh();
     return t;
+  },
+  async remove(id) {
+    await api.tags.delete(id);
+    await get().refresh();
   },
   async attach(taskId, tagId) {
     await api.tags.attach(taskId, tagId);

@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { LayoutList, KanbanSquare, FileText, X } from "lucide-react";
+import { LayoutList, KanbanSquare, FileText, X, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import { useProjects } from "../stores/projects.js";
 import { useTasks } from "../stores/tasks.js";
+import { useUi } from "../stores/ui.js";
 import { ListView } from "./ListView.js";
 import { KanbanView } from "./KanbanView.js";
 import { ProjectNotesView } from "./ProjectNotesView.js";
 import { ColorSwatch } from "../components/ColorSwatch.js";
+import { Markdown } from "../components/Markdown.js";
 import { cn } from "../lib/cn.js";
 
 type Mode = "list" | "kanban" | "notes";
@@ -15,6 +17,8 @@ type Mode = "list" | "kanban" | "notes";
 export function ProjectView({ projectId }: { projectId: string }) {
   const project = useProjects((s) => s.byId[projectId]);
   const update = useProjects((s) => s.update);
+  const remove = useProjects((s) => s.remove);
+  const setView = useUi((s) => s.setView);
   const tasks = useTasks((s) => s.byProject[projectId] ?? EMPTY);
   const byId = useTasks((s) => s.byId);
   const [mode, setMode] = useState<Mode>("list");
@@ -34,6 +38,34 @@ export function ProjectView({ projectId }: { projectId: string }) {
         <div className="flex items-center gap-3">
           <ColorSwatch value={project.color} onChange={(color) => void update(project.id, { color })} />
           <EditableName value={project.name} onSave={(name) => void update(project.id, { name })} />
+          <div className="ml-auto flex items-center gap-1">
+            {project.archived ? (
+              <button onClick={async () => { await update(project.id, { archived: false }); }}
+                className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-pulse px-2 py-1 rounded hover:bg-gray-100"
+                title="Wiederherstellen">
+                <ArchiveRestore size={14} /> Wiederherstellen
+              </button>
+            ) : (
+              <button onClick={async () => {
+                if (!confirm(`Projekt "${project.name}" archivieren? Es verschwindet aus der Sidebar; Tasks bleiben erhalten.`)) return;
+                await update(project.id, { archived: true });
+                setView({ kind: "dashboard" });
+              }}
+                className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-pulse px-2 py-1 rounded hover:bg-gray-100"
+                title="Archivieren">
+                <Archive size={14} /> Archivieren
+              </button>
+            )}
+            <button onClick={async () => {
+              if (!confirm(`Projekt "${project.name}" wirklich löschen? Alle zugehörigen Tasks, Notizen und Anhänge werden mitentfernt. Aktion ist via DB-Restore rückholbar, aber nicht aus der UI.`)) return;
+              await remove(project.id);
+              setView({ kind: "dashboard" });
+            }}
+              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded hover:bg-gray-100"
+              title="Projekt löschen">
+              <Trash2 size={14} /> Löschen
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-6 text-sm">
@@ -117,21 +149,35 @@ function DueDateField({ iso, onChange }: { iso: string | null; onChange: (next: 
 
 function DescriptionField({ value, onChange }: { value: string | null; onChange: (next: string | null) => void }) {
   const [draft, setDraft] = useState(value ?? "");
+  const [editing, setEditing] = useState(false);
   useEffect(() => { setDraft(value ?? ""); }, [value]);
-  // Debounced autosave
-  useEffect(() => {
-    if (draft === (value ?? "")) return;
-    const t = setTimeout(() => onChange(draft.trim() || null), 600);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft]);
 
+  function commit() {
+    setEditing(false);
+    if (draft.trim() === (value ?? "")) return;
+    onChange(draft.trim() || null);
+  }
+
+  if (editing) {
+    return (
+      <textarea autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={commit}
+        placeholder="Beschreibung — Markdown erlaubt…"
+        maxLength={2000} rows={3}
+        className="w-full text-sm bg-transparent border border-[var(--border)] rounded p-2 focus:outline-none focus:ring-2 focus:ring-pulse/30 resize-none font-mono" />
+    );
+  }
+  if (value && value.trim()) {
+    return (
+      <div onClick={() => setEditing(true)} className="cursor-text border border-transparent hover:border-[var(--border)] rounded p-2 -m-2">
+        <Markdown source={value} className="text-sm" />
+      </div>
+    );
+  }
   return (
-    <textarea value={draft} onChange={(e) => setDraft(e.target.value)}
-      placeholder="Beschreibung — was ist das Ziel dieses Projekts?"
-      maxLength={500}
-      rows={2}
-      className="w-full text-sm bg-transparent border border-[var(--border)] rounded p-2 focus:outline-none focus:ring-2 focus:ring-pulse/30 resize-none" />
+    <button onClick={() => setEditing(true)}
+      className="w-full text-left text-xs text-gray-400 italic border border-dashed border-[var(--border)] rounded p-2 hover:border-pulse">
+      Beschreibung — was ist das Ziel dieses Projekts? (Markdown erlaubt)
+    </button>
   );
 }
 

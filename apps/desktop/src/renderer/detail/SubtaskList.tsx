@@ -8,6 +8,7 @@ import { useToasts } from "../components/ui/toast.js";
 export function SubtaskList({ parent }: { parent: Task }) {
   const [children, setChildren] = useState<Task[]>([]);
   const complete = useTasks((s) => s.complete);
+  const update = useTasks((s) => s.update);
   const push = useToasts((s) => s.push);
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
@@ -47,7 +48,10 @@ export function SubtaskList({ parent }: { parent: Task }) {
         {children.map((c) => (
           <label key={c.id} className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={c.status === "done"}
-              onChange={() => { void complete(c.id).then(refresh); }}
+              onChange={() => {
+                if (c.status === "done") void update(c.id, { status: "todo", completedAt: null }).then(refresh);
+                else void complete(c.id).then(refresh);
+              }}
               className="w-4 h-4 accent-pulse" />
             <span className={c.status === "done" ? "line-through text-gray-400" : ""}>{c.title}</span>
           </label>

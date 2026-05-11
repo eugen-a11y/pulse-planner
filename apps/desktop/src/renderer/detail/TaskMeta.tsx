@@ -2,6 +2,9 @@ import type { Task } from "@pulse/core";
 import { useTasks } from "../stores/tasks.js";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
+import { ProjectPicker } from "../components/ProjectPicker.js";
+import { RecurrenceField } from "../components/RecurrenceField.js";
+import { TagPicker } from "../components/TagPicker.js";
 
 const PRIORITIES: Array<{ value: 1 | 2 | 3 | 4; label: string }> = [
   { value: 1, label: "▲▲▲ Hoch" },
@@ -14,6 +17,10 @@ export function TaskMeta({ task }: { task: Task }) {
   const update = useTasks((s) => s.update);
   return (
     <div className="space-y-2 text-sm">
+      <Row label="Projekt">
+        <ProjectPicker value={task.projectId}
+          onChange={(projectId) => void update(task.id, { projectId })} />
+      </Row>
       <Row label="Status">
         <select className="bg-transparent" value={task.status}
           onChange={(e) => void update(task.id, { status: e.target.value as Task["status"] })}>
@@ -32,15 +39,20 @@ export function TaskMeta({ task }: { task: Task }) {
         <input
           type="datetime-local"
           className="bg-transparent"
-          // datetime-local expects "yyyy-MM-ddTHH:mm" in LOCAL time (no timezone).
           value={task.dueDate ? format(parseISO(task.dueDate), "yyyy-MM-dd'T'HH:mm", { locale: de }) : ""}
           onChange={(e) => {
             const v = e.target.value;
-            // new Date(v) treats "yyyy-MM-ddTHH:mm" as local time, then toISOString() converts to UTC.
             const iso = v ? new Date(v).toISOString() : null;
             void update(task.id, { dueDate: iso });
           }}
         />
+      </Row>
+      <Row label="Wiederholt">
+        <RecurrenceField value={task.recurrenceRule}
+          onChange={(recurrenceRule) => void update(task.id, { recurrenceRule })} />
+      </Row>
+      <Row label="Tags">
+        <TagPicker taskId={task.id} />
       </Row>
     </div>
   );
@@ -48,8 +60,8 @@ export function TaskMeta({ task }: { task: Task }) {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-20 text-xs uppercase text-gray-400">{label}</div>
+    <div className="flex items-start gap-3 min-h-[28px]">
+      <div className="w-20 text-xs uppercase text-gray-400 pt-1.5">{label}</div>
       <div className="flex-1">{children}</div>
     </div>
   );

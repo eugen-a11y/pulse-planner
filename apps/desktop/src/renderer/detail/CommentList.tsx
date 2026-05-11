@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Task, Comment } from "@pulse/core";
 import { api } from "../api.js";
 import { Input } from "../components/ui/input.js";
+import { Markdown } from "../components/Markdown.js";
 import { formatDateTime } from "../lib/format.js";
 
 export function CommentList({ task }: { task: Task }) {
@@ -25,7 +26,7 @@ export function CommentList({ task }: { task: Task }) {
         {items.map((c) => (
           <div key={c.id} className="text-sm bg-gray-50 p-2 rounded">
             <div className="text-xs text-gray-400 mb-0.5">{formatDateTime(c.createdAt)}</div>
-            <div className="whitespace-pre-wrap">{c.bodyMd}</div>
+            <Markdown source={c.bodyMd} />
           </div>
         ))}
       </div>

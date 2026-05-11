@@ -3,6 +3,7 @@ import { Button } from "../components/ui/button.js";
 import { Input } from "../components/ui/input.js";
 import { useAuth } from "../stores/auth.js";
 import { useToasts } from "../components/ui/toast.js";
+import logoUrl from "../../../assets/electron-default.png";
 
 export function AuthScreen(): JSX.Element {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -29,7 +30,8 @@ export function AuthScreen(): JSX.Element {
     <div className="h-full flex items-center justify-center bg-[var(--gray-bg)]">
       <form onSubmit={submit} className="w-[360px] bg-white rounded-lg shadow-md border border-[var(--border)] p-8 space-y-4">
         <div className="text-center">
-          <div className="text-3xl font-semibold text-pulse mb-1 leading-tight">Pulse Project Planner</div>
+          <img src={logoUrl} alt="Pulse Project Planner" className="w-16 h-16 mx-auto mb-3" />
+          <div className="text-2xl font-semibold text-pulse mb-1 leading-tight">Pulse Project Planner</div>
           <div className="text-sm text-gray-500">{mode === "signin" ? "Anmelden" : "Konto erstellen"}</div>
         </div>
         <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@beispiel.de" />

@@ -22,8 +22,11 @@ export function DashboardView(): JSX.Element {
   // not just whatever Today/Upcoming have already cached.
   useEffect(() => { void loadAllTasks(); }, []);
 
-  const projects = useMemo(() => projectOrder.map((id) => projectsById[id]!).filter(Boolean), [projectOrder, projectsById]);
-  const allTasks = useMemo(() => Object.values(tasksById), [tasksById]);
+  // Filter out archived projects: they shouldn't take up space on the dashboard,
+  // and their tasks shouldn't count toward KPIs (treat as soft-hidden for metrics).
+  const projects = useMemo(() => projectOrder.map((id) => projectsById[id]!).filter((p) => p && !p.archived), [projectOrder, projectsById]);
+  const archivedIds = useMemo(() => new Set(projectOrder.map((id) => projectsById[id]).filter((p) => p?.archived).map((p) => p!.id)), [projectOrder, projectsById]);
+  const allTasks = useMemo(() => Object.values(tasksById).filter((t) => !t.projectId || !archivedIds.has(t.projectId)), [tasksById, archivedIds]);
   const stats = useMemo(() => computeStats(allTasks), [allTasks]);
   const perProject = useMemo(() => computePerProject(projects, allTasks), [projects, allTasks]);
 

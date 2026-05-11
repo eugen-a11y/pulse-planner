@@ -46,6 +46,7 @@ export interface PulseApi {
     listToday(): Promise<Task[]>;
     listUpcoming(): Promise<Task[]>;
     listInbox(): Promise<Task[]>;
+    tagsForTask(taskId: string): Promise<string[]>;
     create(input: {
       projectId: string | null; title: string;
       dueDate?: string | null; priority?: 1 | 2 | 3 | 4;
@@ -58,6 +59,7 @@ export interface PulseApi {
   tags: {
     list(): Promise<Tag[]>;
     create(input: { name: string; color?: string }): Promise<Tag>;
+    delete(id: string): Promise<void>;
     attach(taskId: string, tagId: string): Promise<void>;
     detach(taskId: string, tagId: string): Promise<void>;
   };

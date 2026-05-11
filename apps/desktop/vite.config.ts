@@ -4,6 +4,9 @@ import electron from "vite-plugin-electron/simple";
 import { resolve } from "node:path";
 
 export default defineConfig({
+  // Vite doesn't treat .ico as an asset by default — opt in so the renderer
+  // can `import logoUrl from "...icon.ico"` and get a hashed-asset URL.
+  assetsInclude: ["**/*.ico"],
   plugins: [
     react(),
     electron({

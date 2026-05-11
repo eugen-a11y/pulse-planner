@@ -1,4 +1,4 @@
-import { BrowserWindow, app } from "electron";
+import { BrowserWindow, app, shell } from "electron";
 import { appendFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -31,6 +31,20 @@ export function createMainWindow(): BrowserWindow {
     },
   });
 
+  // Markdown links carry target=_blank → window.open → here. Hand off to the
+  // user's default browser instead of letting Electron open a new BrowserWindow.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) void shell.openExternal(url);
+    return { action: "deny" };
+  });
+  // Belt-and-suspenders: if any <a> WITHOUT target=_blank slips through and
+  // tries to navigate the renderer to an external URL, intercept and re-route.
+  win.webContents.on("will-navigate", (e, url) => {
+    if (/^https?:/i.test(url) && !url.startsWith("file://")) {
+      e.preventDefault();
+      void shell.openExternal(url);
+    }
+  });
   win.webContents.on("did-fail-load", (_e, code, desc, url) => {
     trace(`did-fail-load code=${code} desc="${desc}" url=${url}`);
     win.show();

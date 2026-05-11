@@ -9,7 +9,10 @@ import { TodayView } from "../today/TodayView.js";
 import { UpcomingView } from "../today/UpcomingView.js";
 import { InboxView } from "../inbox/InboxView.js";
 import { ProjectView } from "../project/ProjectView.js";
+import { TagFilterView } from "../tag/TagFilterView.js";
+import { SearchPalette } from "../search/SearchPalette.js";
 import { DetailPane } from "../detail/DetailPane.js";
+import { TopBar } from "./TopBar.js";
 import { TopBarPill } from "./TopBarPill.js";
 import { StatusBar } from "./StatusBar.js";
 import { OfflineBanner } from "./OfflineBanner.js";
@@ -29,6 +32,7 @@ export function AppShell(): JSX.Element {
 
   return (
     <div className="h-full flex flex-col relative">
+      <TopBar />
       <TopBarPill />
       <OfflineBanner />
       <div className="flex-1 flex min-h-0">
@@ -42,6 +46,7 @@ export function AppShell(): JSX.Element {
       </div>
       <StatusBar />
       <ReSignInModal />
+      <SearchPalette />
     </div>
   );
 }
@@ -53,6 +58,6 @@ function ViewSlot({ view }: { view: ReturnType<typeof useUi.getState>["currentVi
     case "upcoming":  return <UpcomingView />;
     case "inbox":     return <InboxView />;
     case "project":   return <ProjectView projectId={view.projectId} />;
-    case "tag":       return <div className="p-6 text-gray-500">Tag {view.tagId}</div>;
+    case "tag":       return <TagFilterView tagId={view.tagId} />;
   }
 }

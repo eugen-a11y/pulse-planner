@@ -26,10 +26,13 @@ export class BetterSqliteStore implements LocalStore {
     const r = toSqliteRow(table, row as unknown as Record<string, unknown>);
     const cols = Object.keys(r);
     const placeholders = cols.map(() => "?").join(", ");
-    const updates = cols.filter((c) => c !== "id").map((c) => `${c} = excluded.${c}`).join(", ");
+    // task_tags is the only table with a composite PK and no `id` column.
+    const conflictCols = table === "task_tags" ? ["task_id", "tag_id"] : ["id"];
+    const updates = cols.filter((c) => !conflictCols.includes(c)).map((c) => `${c} = excluded.${c}`).join(", ");
+    const conflictSql = `ON CONFLICT(${conflictCols.join(", ")}) ` +
+      (updates ? `DO UPDATE SET ${updates}` : "DO NOTHING");
     const sql =
-      `INSERT INTO ${table} (${cols.join(", ")}) VALUES (${placeholders}) ` +
-      `ON CONFLICT(id) DO UPDATE SET ${updates}`;
+      `INSERT INTO ${table} (${cols.join(", ")}) VALUES (${placeholders}) ` + conflictSql;
     this.db.prepare(sql).run(cols.map((c) => r[c] as never));
   }
 
