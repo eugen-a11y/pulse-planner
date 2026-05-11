@@ -77,8 +77,11 @@ export interface AppDeps {
 }
 
 export function buildDeps(): AppDeps {
-  const url = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
-  const anonKey = process.env.SUPABASE_ANON_KEY ?? "";
+  // Cloud-Supabase defaults so the installer is self-contained — no .env required.
+  // The anon ("publishable") key is by-design public; safe to embed in shipped builds.
+  // A local repo .env overrides these for dev work; userData/.env still wins after.
+  const url = process.env.SUPABASE_URL ?? "https://albbdekronmsiqiwnlpp.supabase.co";
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? "sb_publishable_nTaAenxeN3AgjrqUxb3SLw_ERv_wD3u";
   const dbPath = join(app.getPath("userData"), "pulse.db");
   const db = new Database(dbPath);
   db.exec(migrationSql);
