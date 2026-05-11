@@ -1,15 +1,25 @@
-import type Database from "better-sqlite3";
+import type { SQLiteDatabase } from "expo-sqlite";
 import type {
   BaseRow,
   ListSinceOptions,
   LocalStore,
   SyncTable,
 } from "@pulse/core";
-import { fromSqliteRow, toSqliteRow } from "@pulse/core";
+import {
+  ALL_DDL,
+  fromSqliteRow,
+  toSqliteRow,
+} from "@pulse/core";
 
 const ALLOWED_TABLES: readonly SyncTable[] = [
-  "projects", "tasks", "tags", "task_tags",
-  "attachments", "time_entries", "comments", "notes",
+  "projects",
+  "tasks",
+  "tags",
+  "task_tags",
+  "attachments",
+  "time_entries",
+  "comments",
+  "notes",
 ];
 
 function assertAllowed(t: SyncTable): void {
@@ -18,8 +28,22 @@ function assertAllowed(t: SyncTable): void {
   }
 }
 
-export class BetterSqliteStore implements LocalStore {
-  constructor(private readonly db: Database.Database) {}
+/**
+ * Factory: bootstraps the schema, then returns an ExpoSqliteStore.
+ *
+ * PRAGMA handling: passes ALL_DDL verbatim to execAsync (option a).
+ * Both `PRAGMA journal_mode = WAL` and `PRAGMA foreign_keys = ON` are valid
+ * SQL and work through expo-sqlite's execAsync on iOS; the underlying SQLite
+ * engine processes PRAGMAs before DDL. In the test mock they run fine via
+ * better-sqlite3's db.exec().
+ */
+export async function openExpoSqliteStore(db: SQLiteDatabase): Promise<ExpoSqliteStore> {
+  await db.execAsync(ALL_DDL);
+  return new ExpoSqliteStore(db);
+}
+
+export class ExpoSqliteStore implements LocalStore {
+  constructor(private readonly db: SQLiteDatabase) {}
 
   async upsert<T extends BaseRow>(table: SyncTable, row: T): Promise<void> {
     assertAllowed(table);
@@ -28,17 +52,24 @@ export class BetterSqliteStore implements LocalStore {
     const placeholders = cols.map(() => "?").join(", ");
     // task_tags is the only table with a composite PK and no `id` column.
     const conflictCols = table === "task_tags" ? ["task_id", "tag_id"] : ["id"];
-    const updates = cols.filter((c) => !conflictCols.includes(c)).map((c) => `${c} = excluded.${c}`).join(", ");
-    const conflictSql = `ON CONFLICT(${conflictCols.join(", ")}) ` +
+    const updates = cols
+      .filter((c) => !conflictCols.includes(c))
+      .map((c) => `${c} = excluded.${c}`)
+      .join(", ");
+    const conflictSql =
+      `ON CONFLICT(${conflictCols.join(", ")}) ` +
       (updates ? `DO UPDATE SET ${updates}` : "DO NOTHING");
     const sql =
       `INSERT INTO ${table} (${cols.join(", ")}) VALUES (${placeholders}) ` + conflictSql;
-    this.db.prepare(sql).run(cols.map((c) => r[c] as never));
+    await this.db.runAsync(sql, ...cols.map((c) => r[c] as never));
   }
 
   async findById<T extends BaseRow>(table: SyncTable, id: string): Promise<T | null> {
     assertAllowed(table);
-    const row = this.db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+    const row = await this.db.getFirstAsync<Record<string, unknown>>(
+      `SELECT * FROM ${table} WHERE id = ?`,
+      id,
+    );
     return row ? (fromSqliteRow(table, row) as T) : null;
   }
 
@@ -67,29 +98,27 @@ export class BetterSqliteStore implements LocalStore {
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
     const sortCol = hasUpdatedAt ? "updated_at" : "created_at";
     const sql = `SELECT * FROM ${table} ${whereSql} ORDER BY ${sortCol} ASC`;
-    const rows = this.db.prepare(sql).all(...args) as Record<string, unknown>[];
+    const rows = await this.db.getAllAsync<Record<string, unknown>>(sql, ...args);
     return rows.map((r) => fromSqliteRow(table, r) as T);
   }
 
   async softDelete(table: SyncTable, id: string, atIso: string): Promise<void> {
     assertAllowed(table);
-    this.db.prepare(`UPDATE ${table} SET deleted_at = ?, updated_at = ? WHERE id = ?`)
-      .run(atIso, atIso, id);
+    await this.db.runAsync(
+      `UPDATE ${table} SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+      atIso,
+      atIso,
+      id,
+    );
   }
 
   async transaction<R>(fn: (tx: LocalStore) => Promise<R>): Promise<R> {
-    // better-sqlite3 transactions are sync. We wrap via savepoint + manual control
-    // because LocalStore.transaction is async. SAVEPOINT lets us roll back on throw.
-    const sp = `tx_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    this.db.prepare(`SAVEPOINT ${sp}`).run();
-    try {
-      const result = await fn(this);
-      this.db.prepare(`RELEASE SAVEPOINT ${sp}`).run();
-      return result;
-    } catch (e) {
-      this.db.prepare(`ROLLBACK TO SAVEPOINT ${sp}`).run();
-      this.db.prepare(`RELEASE SAVEPOINT ${sp}`).run();
-      throw e;
-    }
+    let result!: R;
+    // withTransactionAsync rolls back automatically if the callback throws —
+    // that is expo-sqlite's documented contract (and our mock mirrors it).
+    await this.db.withTransactionAsync(async () => {
+      result = await fn(this);
+    });
+    return result;
   }
 }

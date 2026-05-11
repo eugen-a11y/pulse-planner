@@ -1,4 +1,4 @@
-import { snakifyKeys, snakeToCamelRow } from "@pulse/core";
+import { snakifyKeys, snakeToCamelRow } from "../sync/case-mapping.js";
 
 const BOOL_FIELDS_BY_TABLE: Record<string, readonly string[]> = {
   projects: ["archived"],
