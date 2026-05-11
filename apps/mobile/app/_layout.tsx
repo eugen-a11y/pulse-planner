@@ -26,6 +26,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [deps, setDeps] = useState<MobileDeps | null>(null);
   const router = useRouter();
+  const session = useAuth((s) => s.session);
   const realtimeUnsubRef = useRef<(() => void) | null>(null);
   const pendingPullRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backstopRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -92,14 +93,18 @@ export default function RootLayout() {
       }
     }
 
-    // Initial start (we're active when mount happens).
+    // Initial start (we're active when mount happens). This effect re-runs
+    // when `session` flips (sign-in / sign-out / token refresh), so an
+    // in-session sign-in immediately starts the realtime sub on its rerun —
+    // matching desktop's `startBackgroundSync()` call inside the auth.signIn
+    // IPC handler (apps/desktop/src/main/ipc.ts:86).
     if (AppState.currentState === "active") startBackgroundSync();
     const sub = AppState.addEventListener("change", onAppStateChange);
     return () => {
       sub.remove();
       stopBackgroundSync();
     };
-  }, [deps, router]);
+  }, [deps, router, session]);
 
   if (!deps) return null;
 
