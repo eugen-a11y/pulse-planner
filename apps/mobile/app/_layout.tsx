@@ -27,6 +27,7 @@ export default function RootLayout() {
   const [deps, setDeps] = useState<MobileDeps | null>(null);
   const router = useRouter();
   const session = useAuth((s) => s.session);
+  const authLoading = useAuth((s) => s.loading);
   const realtimeUnsubRef = useRef<(() => void) | null>(null);
   const pendingPullRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backstopRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -106,11 +107,24 @@ export default function RootLayout() {
     };
   }, [deps, router, session]);
 
+  // Route guard. Once deps are resolved and the initial restore() has
+  // completed (loading === false), redirect to /auth/login when there is no
+  // active session. Re-runs on session change: sign-in flips session → guard
+  // is a no-op; sign-out flips session → guard redirects.
+  useEffect(() => {
+    if (!deps) return;
+    if (authLoading) return;
+    if (!session) router.replace("/auth/login");
+  }, [deps, session, authLoading, router]);
+
   if (!deps) return null;
 
   return (
     <DepsProvider value={deps}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="auth" />
+      </Stack>
     </DepsProvider>
   );
 }
