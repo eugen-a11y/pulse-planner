@@ -2,6 +2,7 @@ import { Stack, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
+import * as Linking from "expo-linking";
 import { buildDeps, type MobileDeps } from "@/wiring/deps";
 import { DepsProvider } from "@/wiring/depsContext";
 import { bindStoresToDeps, refreshAll, useAuth, patchStatus } from "@/stores";
@@ -116,6 +117,32 @@ export default function RootLayout() {
     if (authLoading) return;
     if (!session) router.replace("/auth/login");
   }, [deps, session, authLoading, router]);
+
+  // Deep-link handler. Supports:
+  //   pulse://task/<id>  → /task/<id>   (Task 14 lands the screen)
+  //   pulse://today      → /(tabs)/today
+  // Runs once we have deps + an authenticated session — otherwise the route
+  // guard above will redirect to /auth/login before any push lands. Handles
+  // cold-start (initial URL) and warm "url" events.
+  useEffect(() => {
+    if (!deps || !session) return;
+
+    function handleUrl(url: string | null): void {
+      if (!url) return;
+      const { hostname, path } = Linking.parse(url);
+      if (hostname === "task" && path) {
+        router.push(`/task/${path}` as never);
+      } else if (hostname === "today") {
+        router.push("/(tabs)/today" as never);
+      }
+    }
+
+    void Linking.getInitialURL().then(handleUrl);
+    const sub = Linking.addEventListener("url", (e) => handleUrl(e.url));
+    return () => {
+      sub.remove();
+    };
+  }, [deps, session, router]);
 
   if (!deps) return null;
 
