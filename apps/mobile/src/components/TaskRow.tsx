@@ -14,15 +14,24 @@ import { DueDateBadge } from "./DueDateBadge";
  *   • Tap row → router.push("/task/<id>") (target screen lands in Task 14).
  *   • Tap checkbox → complete() or re-open via update({ status: "todo", ... }).
  *   • Swipe-left → red "Erledigt" action that completes the task.
- *   • Long-press → iOS ActionSheet with Erledigen / Löschen / Abbrechen.
+ *   • Long-press → iOS ActionSheet with Erledigen / [extraActions…] / Löschen
+ *     / Abbrechen. `extraActions` is the screen-specific extension surface used
+ *     e.g. by the Inbox screen to inject "Verschieben in Projekt…".
  *
  * Tag dots are deferred to Task 14/15 per the plan — no task_tags fetch here.
  */
-export interface TaskRowProps {
-  task: Task;
+export interface TaskRowExtraAction {
+  label: string;
+  destructive?: boolean;
+  onPress: () => void;
 }
 
-export function TaskRow({ task }: TaskRowProps): JSX.Element {
+export interface TaskRowProps {
+  task: Task;
+  extraActions?: TaskRowExtraAction[];
+}
+
+export function TaskRow({ task, extraActions = [] }: TaskRowProps): JSX.Element {
   const router = useRouter();
   const complete = useTasks((s) => s.complete);
   const update = useTasks((s) => s.update);
@@ -37,15 +46,28 @@ export function TaskRow({ task }: TaskRowProps): JSX.Element {
   }
 
   function onLongPress(): void {
+    // Order: Erledigen, …extraActions, Löschen, Abbrechen.
+    const options = ["Erledigen", ...extraActions.map((a) => a.label), "Löschen", "Abbrechen"];
+    const deleteIndex = 1 + extraActions.length;
+    const cancelIndex = deleteIndex + 1;
+    // Mark Löschen as destructive plus any extraActions flagged destructive.
+    const destructiveIndices: number[] = [deleteIndex];
+    extraActions.forEach((a, i) => {
+      if (a.destructive) destructiveIndices.push(1 + i);
+    });
     ActionSheetIOS.showActionSheetWithOptions(
       {
-        options: ["Erledigen", "Löschen", "Abbrechen"],
-        destructiveButtonIndex: 1,
-        cancelButtonIndex: 2,
+        options,
+        destructiveButtonIndex: destructiveIndices,
+        cancelButtonIndex: cancelIndex,
       },
       (idx) => {
         if (idx === 0) void complete(task.id);
-        else if (idx === 1) void remove(task.id);
+        else if (idx === deleteIndex) void remove(task.id);
+        else if (idx > 0 && idx < deleteIndex) {
+          const extra = extraActions[idx - 1];
+          if (extra) extra.onPress();
+        }
       },
     );
   }

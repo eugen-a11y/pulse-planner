@@ -1,5 +1,5 @@
-import { EmptyState } from "@/components/EmptyState";
+import { InboxScreen } from "@/screens/inbox/InboxScreen";
 
 export default function InboxRoute(): JSX.Element {
-  return <EmptyState title="Inbox" subtitle="Wird in Task 12 implementiert." />;
+  return <InboxScreen />;
 }
