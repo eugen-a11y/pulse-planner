@@ -27,6 +27,7 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^expo-sqlite$": "<rootDir>/test/__mocks__/expo-sqlite",
+    "^expo-secure-store$": "<rootDir>/test/__mocks__/expo-secure-store",
     // Point to the TypeScript source so ts-jest can transform it (dist is ESM-only)
     "^@pulse/core$": "<rootDir>/../../packages/core/src/index.ts",
     "^@pulse/core/(.*)$": "<rootDir>/../../packages/core/src/$1",
