@@ -152,6 +152,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="auth" />
         <Stack.Screen name="project/[id]" />
+        <Stack.Screen name="task/[id]" />
       </Stack>
     </DepsProvider>
   );
