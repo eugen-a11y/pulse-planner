@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseQuickAddText } from "../../src/renderer/lib/quick-add-parser.js";
+import { parseQuickAdd } from "../../src/quickAdd/parser.js";
 
 const projects = [
   { id: "p1", name: "pulsehamburg" },
@@ -7,9 +7,9 @@ const projects = [
   { id: "p3", name: "Personal" },
 ];
 
-describe("parseQuickAddText", () => {
+describe("parseQuickAdd", () => {
   it("plain text returns title only", () => {
-    const r = parseQuickAddText("Storyboard schreiben", projects);
+    const r = parseQuickAdd("Storyboard schreiben", projects);
     expect(r.title).toBe("Storyboard schreiben");
     expect(r.projectId).toBeNull();
     expect(r.dueDate).toBeNull();
@@ -18,25 +18,25 @@ describe("parseQuickAddText", () => {
   });
 
   it("parses @projectPrefix (case-insensitive, fuzzy)", () => {
-    const r = parseQuickAddText("Newsletter @pulse", projects);
+    const r = parseQuickAdd("Newsletter @pulse", projects);
     expect(r.title).toBe("Newsletter");
     expect(r.projectId).toBe("p1");
   });
 
   it("parses !priority", () => {
-    const r = parseQuickAddText("Wichtig !1", projects);
+    const r = parseQuickAdd("Wichtig !1", projects);
     expect(r.priority).toBe(1);
     expect(r.title).toBe("Wichtig");
   });
 
   it("parses #tag", () => {
-    const r = parseQuickAddText("Mail #urgent #waiting", projects);
+    const r = parseQuickAdd("Mail #urgent #waiting", projects);
     expect(r.tagNames).toEqual(["urgent", "waiting"]);
     expect(r.title).toBe("Mail");
   });
 
   it("parses German natural date (heute)", () => {
-    const r = parseQuickAddText("Mail heute", projects);
+    const r = parseQuickAdd("Mail heute", projects);
     expect(r.dueDate).not.toBeNull();
     const d = new Date(r.dueDate!);
     const now = new Date();
@@ -45,7 +45,7 @@ describe("parseQuickAddText", () => {
   });
 
   it("combines all syntax", () => {
-    const r = parseQuickAddText("Steuerb. mailen @personal !2 morgen #waiting", projects);
+    const r = parseQuickAdd("Steuerb. mailen @personal !2 morgen #waiting", projects);
     expect(r.projectId).toBe("p3");
     expect(r.priority).toBe(2);
     expect(r.tagNames).toEqual(["waiting"]);

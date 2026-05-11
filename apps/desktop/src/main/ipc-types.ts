@@ -16,13 +16,8 @@ export interface SyncStatus {
   lastError: string | null;
 }
 
-export interface ParsedQuickAdd {
-  title: string;
-  projectId: string | null;
-  dueDate: string | null;
-  priority: 1 | 2 | 3 | 4;
-  tagNames: string[];
-}
+import type { ParsedQuickAdd } from "@pulse/core";
+export type { ParsedQuickAdd };
 
 export interface PulseApi {
   // Resolves an absolute file path from a dropped File object. Required since

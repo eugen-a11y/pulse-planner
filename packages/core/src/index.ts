@@ -4,5 +4,6 @@ export * from "./sync/index.js";
 export * from "./auth/index.js";
 export * from "./supabase/index.js";
 export * from "./sql/ddl.js";
+export * from "./quickAdd/parser.js";
 
 export const PULSE_CORE_VERSION = "0.1.0";

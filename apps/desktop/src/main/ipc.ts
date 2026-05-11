@@ -497,8 +497,8 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const userId = requireUser(deps);
     const projects = await deps.store.listSince("projects", null, { userId });
     const refs = (projects as any[]).map((p) => ({ id: p.id, name: p.name }));
-    const { parseQuickAddText } = await import("../renderer/lib/quick-add-parser.js");
-    return parseQuickAddText(text, refs);
+    const { parseQuickAdd } = await import("@pulse/core");
+    return parseQuickAdd(text, refs);
   });
   ipcMain.handle("quickAdd.submit", async (_e, parsed: { title: string; projectId: string | null; dueDate: string | null; priority: 1|2|3|4; tagNames: string[] }) => {
     const userId = requireUser(deps);

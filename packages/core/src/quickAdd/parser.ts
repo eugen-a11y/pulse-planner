@@ -1,5 +1,12 @@
 import * as chrono from "chrono-node";
-import type { ParsedQuickAdd } from "../../main/ipc-types.js";
+
+export interface ParsedQuickAdd {
+  title: string;
+  projectId: string | null;
+  dueDate: string | null;
+  priority: 1 | 2 | 3 | 4;
+  tagNames: string[];
+}
 
 interface ProjectRef { id: string; name: string; }
 
@@ -7,7 +14,7 @@ const TAG_RE = /(^|\s)#([a-zA-ZäöüÄÖÜß0-9_-]+)/g;
 const PRIORITY_RE = /(^|\s)!([1-4])\b/;
 const PROJECT_RE = /(^|\s)@([a-zA-ZäöüÄÖÜß0-9_-]+)/g;
 
-export function parseQuickAddText(input: string, projects: readonly ProjectRef[]): ParsedQuickAdd {
+export function parseQuickAdd(input: string, projects: readonly ProjectRef[]): ParsedQuickAdd {
   let text = input;
   const tagNames: string[] = [];
   let projectId: string | null = null;
