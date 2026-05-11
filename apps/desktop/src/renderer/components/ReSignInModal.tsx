@@ -24,7 +24,10 @@ export function ReSignInModal(): JSX.Element | null {
     e.preventDefault();
     setBusy(true);
     try {
-      await signIn(email || session!.user.email!, pw);
+      // Honour the user's existing rememberMe preference on re-auth, so a
+      // mid-session token expiry doesn't silently flip them off auto-login.
+      const prefs = await api.prefs.get();
+      await signIn(email || session!.user.email!, pw, Boolean(prefs?.rememberMe));
       setNeeded(false);
     } finally { setBusy(false); }
   }

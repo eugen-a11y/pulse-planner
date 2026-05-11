@@ -44,17 +44,31 @@ export class AuthService {
     await this.storage.clear();
   }
 
+  /** Wipe the on-disk refresh token without ending the in-memory session.
+   *  Used by hosts that want to gate persistence behind a "remember me" toggle. */
+  async clearStoredCredentials(): Promise<void> {
+    await this.storage.clear();
+  }
+
   async restoreSession(): Promise<PulseSession | null> {
     const refresh = await this.storage.get(REFRESH_TOKEN_KEY);
     if (!refresh) return null;
-    const { data, error } = await this.supabase.auth.setSession({
-      access_token: "",
+    // Use refreshSession (the canonical API for "I only have a refresh token").
+    // setSession with access_token: "" used to silently fail and clear our token,
+    // forcing the user to re-enter credentials on every launch.
+    const { data, error } = await this.supabase.auth.refreshSession({
       refresh_token: refresh,
     });
-    if (error || !data.session) {
-      await this.storage.clear();
-      return null;
+    if (error) {
+      // Surface the error so the host can log it. Do NOT clear storage here —
+      // an over-broad regex match on the error message used to wipe valid tokens
+      // (e.g. transient 4xx mentioning "refresh_token") and force re-login.
+      // The user can manually sign out if they want to clear stored credentials.
+      const e = new Error(`refreshSession failed: ${error.message}`);
+      (e as any).code = (error as any).code ?? "refresh_failed";
+      throw e;
     }
+    if (!data.session) return null;
     await this.storage.set(REFRESH_TOKEN_KEY, data.session.refresh_token);
     return adapt(data.session);
   }

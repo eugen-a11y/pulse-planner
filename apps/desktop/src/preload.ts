@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld("pulse", {
     signOut: invoke("auth.signOut"),
     restoreSession: invoke("auth.restoreSession"),
   },
+  prefs: {
+    get: invoke("prefs.get"),
+    set: invoke("prefs.set"),
+  },
   projects: {
     list: invoke("projects.list"),
     create: invoke("projects.create"),

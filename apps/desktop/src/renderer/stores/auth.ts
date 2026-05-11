@@ -5,8 +5,8 @@ import { api } from "../api.js";
 interface AuthState {
   session: PulseSession | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  signUp: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   restore: () => Promise<void>;
 }
@@ -14,12 +14,12 @@ interface AuthState {
 export const useAuth = create<AuthState>((set) => ({
   session: null,
   loading: true,
-  async signIn(email, password) {
-    const session = await api.auth.signIn(email, password);
+  async signIn(email, password, rememberMe = false) {
+    const session = await api.auth.signIn(email, password, rememberMe);
     set({ session, loading: false });
   },
-  async signUp(email, password) {
-    const session = await api.auth.signUp(email, password);
+  async signUp(email, password, rememberMe = false) {
+    const session = await api.auth.signUp(email, password, rememberMe);
     set({ session, loading: false });
   },
   async signOut() {

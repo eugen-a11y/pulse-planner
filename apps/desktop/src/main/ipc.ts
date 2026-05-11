@@ -1,10 +1,22 @@
 import { ipcMain, shell, app, type BrowserWindow } from "electron";
+import { appendFileSync } from "node:fs";
+import { join as pathJoin } from "node:path";
+
+function traceAuth(line: string): void {
+  try {
+    appendFileSync(
+      pathJoin(app.getPath("userData"), "boot-trace.log"),
+      `${new Date().toISOString()} [auth] ${line}\n`,
+    );
+  } catch { /* userData not writable yet */ }
+}
 import {
   makeProject, makeTask, makeTag, makeTaskTag, nowIso,
   type Project, type Task, type Tag,
 } from "@pulse/core";
 import type { AppDeps } from "./deps.js";
 import { broadcast, pushAfterMutation, pushSyncStatus, requireUser } from "./ipc-helpers.js";
+import { loadPrefs, savePrefs, type Prefs } from "./prefs.js";
 
 async function tasksChanged(deps: AppDeps, getWin: () => BrowserWindow | null): Promise<void> {
   broadcast(getWin(), "tasks.changed");
@@ -13,25 +25,98 @@ async function tasksChanged(deps: AppDeps, getWin: () => BrowserWindow | null): 
 }
 
 export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): void {
+  // Background-sync lifecycle: realtime subscription + 60s backstop.
+  // Per spec (desktop-design.md §5.4): pull triggers are app start, realtime
+  // event (debounced 500ms), manual refresh, 60-second backstop timer.
+  let realtimeUnsub: (() => void) | null = null;
+  let backstopInterval: NodeJS.Timeout | null = null;
+  let pendingPull: NodeJS.Timeout | null = null;
+
+  async function pullAndBroadcast(): Promise<void> {
+    if (!deps.engine) return;
+    try {
+      await deps.engine.pull();
+      broadcast(getWin(), "projects.changed");
+      broadcast(getWin(), "tasks.changed");
+      broadcast(getWin(), "tags.changed");
+      await pushSyncStatus(deps, getWin, { lastPullAt: nowIso() });
+    } catch (e) {
+      if (/401|unauthor|jwt/i.test((e as Error).message)) {
+        await deps.auth.signOut();
+        deps.engine = null;
+        stopBackgroundSync();
+        getWin()?.webContents.send("auth.expired", null);
+      }
+      await pushSyncStatus(deps, getWin);
+    }
+  }
+
+  function startBackgroundSync(): void {
+    stopBackgroundSync();
+    if (!deps.engine) return;
+    void pullAndBroadcast();
+    realtimeUnsub = deps.engine.subscribeRealtime(() => {
+      if (pendingPull) return;
+      pendingPull = setTimeout(() => {
+        pendingPull = null;
+        void pullAndBroadcast();
+      }, 500);
+    });
+    backstopInterval = setInterval(() => { void pullAndBroadcast(); }, 60_000);
+  }
+
+  function stopBackgroundSync(): void {
+    if (realtimeUnsub)     { realtimeUnsub();             realtimeUnsub = null; }
+    if (backstopInterval)  { clearInterval(backstopInterval); backstopInterval = null; }
+    if (pendingPull)       { clearTimeout(pendingPull);   pendingPull = null; }
+  }
+
+  // ─── prefs ───
+  ipcMain.handle("prefs.get", async () => loadPrefs());
+  ipcMain.handle("prefs.set", async (_e, partial: Partial<Prefs>) => savePrefs(partial));
+
   // ─── auth ───
-  ipcMain.handle("auth.signIn", async (_e, email: string, password: string) => {
+  // rememberMe param is opt-in: when false (default), the refresh token is wiped
+  // immediately after sign-in so the next launch will not auto-restore.
+  ipcMain.handle("auth.signIn", async (_e, email: string, password: string, rememberMe: boolean = false) => {
     const session = await deps.auth.signIn(email, password);
+    if (!rememberMe) await deps.auth.clearStoredCredentials();
+    savePrefs({ rememberMe });
     deps.setUserId(session.user.id);
+    startBackgroundSync();
     return session;
   });
-  ipcMain.handle("auth.signUp", async (_e, email: string, password: string) => {
+  ipcMain.handle("auth.signUp", async (_e, email: string, password: string, rememberMe: boolean = false) => {
     const session = await deps.auth.signUp(email, password);
+    if (!rememberMe) await deps.auth.clearStoredCredentials();
+    savePrefs({ rememberMe });
     deps.setUserId(session.user.id);
+    startBackgroundSync();
     return session;
   });
   ipcMain.handle("auth.signOut", async () => {
+    stopBackgroundSync();
     await deps.auth.signOut();
     deps.engine = null;
   });
   ipcMain.handle("auth.restoreSession", async () => {
-    const session = await deps.auth.restoreSession();
-    if (session) deps.setUserId(session.user.id);
-    return session;
+    const prefs = loadPrefs();
+    if (!prefs.rememberMe) {
+      traceAuth("restoreSession skipped: rememberMe=false");
+      return null;
+    }
+    try {
+      const session = await deps.auth.restoreSession();
+      traceAuth(session ? `restoreSession OK user=${session.user.email ?? session.user.id}` : "restoreSession returned null");
+      if (session) {
+        deps.setUserId(session.user.id);
+        startBackgroundSync();
+      }
+      return session;
+    } catch (e) {
+      traceAuth(`restoreSession THREW: ${(e as Error).message}`);
+      return null;
+    }
   });
 
   // ─── projects ───
@@ -286,20 +371,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
 
   // ─── sync ───
   ipcMain.handle("sync.pushNow", async () => { await pushAfterMutation(deps, getWin); });
-  ipcMain.handle("sync.pullNow", async () => {
-    if (!deps.engine) return;
-    try {
-      await deps.engine.pull();
-      await pushSyncStatus(deps, getWin, { lastPullAt: nowIso() });
-    } catch (e) {
-      if (/401|unauthor|jwt/i.test((e as Error).message)) {
-        await deps.auth.signOut();
-        deps.engine = null;
-        getWin()?.webContents.send("auth.expired", null);
-      }
-      await pushSyncStatus(deps, getWin);
-    }
-  });
+  ipcMain.handle("sync.pullNow", async () => { await pullAndBroadcast(); });
 
   // ─── time_entries ───
   ipcMain.handle("time_entries.listForTask", async (_e, taskId: string) => {

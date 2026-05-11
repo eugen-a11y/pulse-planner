@@ -30,10 +30,14 @@ export interface PulseApi {
   // hit webUtils.getPathForFile.
   getPathForFile(file: File): string;
   auth: {
-    signIn(email: string, password: string): Promise<PulseSession>;
-    signUp(email: string, password: string): Promise<PulseSession>;
+    signIn(email: string, password: string, rememberMe?: boolean): Promise<PulseSession>;
+    signUp(email: string, password: string, rememberMe?: boolean): Promise<PulseSession>;
     signOut(): Promise<void>;
     restoreSession(): Promise<PulseSession | null>;
+  };
+  prefs: {
+    get(): Promise<{ rememberMe: boolean }>;
+    set(partial: { rememberMe?: boolean }): Promise<{ rememberMe: boolean }>;
   };
   projects: {
     list(): Promise<Project[]>;

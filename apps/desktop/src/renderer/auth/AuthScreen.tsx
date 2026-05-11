@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button.js";
 import { Input } from "../components/ui/input.js";
 import { useAuth } from "../stores/auth.js";
 import { useToasts } from "../components/ui/toast.js";
+import { api } from "../api.js";
 import logoUrl from "../../../assets/electron-default.png";
 
 export function AuthScreen(): JSX.Element {
@@ -10,15 +11,21 @@ export function AuthScreen(): JSX.Element {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [busy, setBusy] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { signIn, signUp } = useAuth();
   const push = useToasts((s) => s.push);
+
+  // Initialise the checkbox from the saved preference (default: false on first launch).
+  useEffect(() => {
+    void api.prefs.get().then((p) => setRememberMe(Boolean(p?.rememberMe)));
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signin") await signIn(email, pw);
-      else await signUp(email, pw);
+      if (mode === "signin") await signIn(email, pw, rememberMe);
+      else                   await signUp(email, pw, rememberMe);
     } catch (err) {
       push((err as Error).message, "error");
     } finally {
@@ -36,6 +43,15 @@ export function AuthScreen(): JSX.Element {
         </div>
         <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@beispiel.de" />
         <Input type="password" required minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Passwort" />
+        <label className="flex items-center gap-2 text-sm text-gray-600 select-none cursor-pointer">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="h-4 w-4 accent-pulse"
+          />
+          Angemeldet bleiben
+        </label>
         <Button type="submit" disabled={busy} className="w-full">
           {busy ? "..." : mode === "signin" ? "Anmelden" : "Konto erstellen"}
         </Button>
