@@ -1,5 +1,5 @@
-import { EmptyState } from "@/components/EmptyState";
+import { TodayScreen } from "@/screens/today/TodayScreen";
 
 export default function TodayRoute(): JSX.Element {
-  return <EmptyState title="Heute" subtitle="Wird in Task 11 implementiert." />;
+  return <TodayScreen />;
 }
