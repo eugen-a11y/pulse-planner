@@ -19,6 +19,8 @@ export interface MobileDeps {
   supabase: SupabaseClient;
   auth: AuthService;
   engine: SyncEngine | null;
+  /** Current signed-in user id, or null. Set by setUserId(). */
+  userId: string | null;
   setUserId(userId: string): void;
 }
 
@@ -49,7 +51,9 @@ export async function buildDeps(): Promise<MobileDeps> {
     supabase,
     auth,
     engine: null,
+    userId: null,
     setUserId(userId: string) {
+      deps.userId = userId;
       deps.engine = new SyncEngine({ supabase, outbox, store, userId, stateRepo });
     },
   };
