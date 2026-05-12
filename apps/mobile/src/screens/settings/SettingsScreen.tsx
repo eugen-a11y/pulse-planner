@@ -21,6 +21,7 @@ import { Platform } from "react-native";
 import { useAuth, useSync, manualPull } from "@/stores";
 import { useDeps } from "@/wiring/depsContext";
 import { getFaceIdEnabled, setFaceIdEnabled } from "@/lib/prefs";
+import { readDebugLog } from "@/lib/debugLog";
 
 /**
  * SettingsScreen (Task 18). Read-only Konto + Sync controls + Sicherheit
@@ -157,6 +158,9 @@ export function SettingsScreen(): JSX.Element {
     if (exporting) return;
     setExporting(true);
     try {
+      // Background-fetch + boot trace lines. Best-effort — empty string if
+      // the file doesn't exist yet (first run) or is unreadable.
+      const bgLog = await readDebugLog();
       const debug = {
         deviceInfo: {
           platform: Platform.OS,
@@ -177,6 +181,7 @@ export function SettingsScreen(): JSX.Element {
           supabaseUrl: (deps.supabase as unknown as { rest?: { url?: string } })?.rest?.url ?? null,
         },
         userId: deps.userId ?? null,
+        backgroundFetchLog: bgLog,
       };
       const uri = `${FileSystem.documentDirectory ?? ""}pulse-debug.json`;
       await FileSystem.writeAsStringAsync(uri, JSON.stringify(debug, null, 2));

@@ -15,6 +15,7 @@ import {
   replayLastNotificationResponse,
   requestPermissions as requestNotificationPermissions,
 } from "@/platform/ExpoNotifications";
+import { registerBackgroundFetch } from "@/platform/BackgroundFetch";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -63,6 +64,14 @@ export default function RootLayout() {
         });
       } catch {
         // Best-effort — never block boot on notification wiring.
+      }
+      // Background fetch (Task 21): register the `pulse-bg-pull` task so iOS
+      // can wake the app every ~30 min for a pull + widget snapshot refresh.
+      // Fire-and-forget — failures are logged to the debug log inside.
+      try {
+        void registerBackgroundFetch();
+      } catch {
+        // Best-effort — never block boot on background-fetch registration.
       }
     })();
   }, []);
