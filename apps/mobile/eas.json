@@ -11,7 +11,7 @@
       "ios": { "simulator": false }
     },
     "production": {
-      "ios": { "simulator": false }
+      "ios": { "simulator": false, "image": "latest" }
     }
   },
   "submit": {
