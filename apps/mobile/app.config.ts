@@ -6,17 +6,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "pulse-planner",
   owner: "deathrage94s-organization",
   scheme: "pulse",
-  version: "0.1.15",
+  version: "0.1.16",
   orientation: "portrait",
   userInterfaceStyle: "automatic",
   icon: "./assets/icon.png",
   splash: { image: "./assets/icon.png", resizeMode: "contain", backgroundColor: "#FFFFFF" },
   ios: {
     bundleIdentifier: "me.reinfeld.pulse",
-    buildNumber: "16",
+    buildNumber: "17",
     supportsTablet: false,
     infoPlist: {
       UIBackgroundModes: ["fetch", "processing"],
+      BGTaskSchedulerPermittedIdentifiers: ["pulse-bg-pull"],
       NSFaceIDUsageDescription: "Pulse nutzt Face ID zum schnellen Entsperren.",
       ITSAppUsesNonExemptEncryption: false
     },
