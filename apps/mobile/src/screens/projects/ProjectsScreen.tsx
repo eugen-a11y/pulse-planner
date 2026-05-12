@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronDown, ChevronRight, Plus, Tag as TagIcon } from "lucide-react-native";
+import { ChevronDown, ChevronRight, Plus, Search, Tag as TagIcon } from "lucide-react-native";
 import type { Project } from "@pulse/core";
 import { useProjects } from "@/stores/projects";
 import { useDeps } from "@/wiring/depsContext";
@@ -142,6 +142,13 @@ export function ProjectsScreen(): JSX.Element {
           accessibilityLabel="Tags verwalten"
         >
           <TagIcon color="#475569" size={20} />
+        </Pressable>
+        <Pressable
+          hitSlop={8}
+          onPress={() => router.push("/search" as never)}
+          accessibilityLabel="Suchen"
+        >
+          <Search color="#475569" size={20} />
         </Pressable>
         <Pressable hitSlop={8} onPress={onAddPress} accessibilityLabel="Neues Projekt">
           <Plus color="#2563EB" size={22} />

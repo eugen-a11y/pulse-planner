@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { Plus, Search } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import type { Task } from "@pulse/core";
 import { useTasks } from "@/stores/tasks";
 import { useDeps } from "@/wiring/depsContext";
@@ -29,6 +30,7 @@ import { ProjectPickerSheet } from "@/components/ProjectPickerSheet";
  */
 export function InboxScreen(): JSX.Element {
   const deps = useDeps();
+  const router = useRouter();
   const ids = useTasks((s) => s.inboxIds);
   const byId = useTasks((s) => s.byId);
   const update = useTasks((s) => s.update);
@@ -92,10 +94,8 @@ export function InboxScreen(): JSX.Element {
         </Pressable>
         <Pressable
           hitSlop={8}
-          onPress={() => {
-            // TODO: SearchScreen (Task 16)
-            console.log("TODO: SearchScreen");
-          }}
+          onPress={() => router.push("/search" as never)}
+          accessibilityLabel="Suchen"
         >
           <Search color="#475569" size={20} />
         </Pressable>

@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { Plus, Search } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import type { Task } from "@pulse/core";
@@ -31,6 +32,7 @@ type Row =
 
 export function TodayScreen(): JSX.Element {
   const deps = useDeps();
+  const router = useRouter();
   const ids = useTasks((s) => s.todayIds);
   const byId = useTasks((s) => s.byId);
   const [refreshing, setRefreshing] = useState(false);
@@ -96,10 +98,8 @@ export function TodayScreen(): JSX.Element {
         </Pressable>
         <Pressable
           hitSlop={8}
-          onPress={() => {
-            // TODO: SearchScreen (Task 16)
-            console.log("TODO: SearchScreen");
-          }}
+          onPress={() => router.push("/search" as never)}
+          accessibilityLabel="Suchen"
         >
           <Search color="#475569" size={20} />
         </Pressable>

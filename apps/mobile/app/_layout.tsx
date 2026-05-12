@@ -155,6 +155,7 @@ export default function RootLayout() {
         <Stack.Screen name="task/[id]" />
         <Stack.Screen name="tags/index" />
         <Stack.Screen name="tags/[id]" />
+        <Stack.Screen name="search" />
       </Stack>
     </DepsProvider>
   );

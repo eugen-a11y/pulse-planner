@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Pressable,
   RefreshControl,
   SectionList,
   Text,
   View,
 } from "react-native";
+import { Search } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import type { Task } from "@pulse/core";
@@ -25,6 +28,7 @@ interface Section {
 
 export function UpcomingScreen(): JSX.Element {
   const deps = useDeps();
+  const router = useRouter();
   const ids = useTasks((s) => s.upcomingIds);
   const byId = useTasks((s) => s.byId);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,6 +71,13 @@ export function UpcomingScreen(): JSX.Element {
       <View className="flex-row items-center px-4 py-3 border-b border-gray-200 gap-3">
         <Text className="text-xl font-semibold text-ink flex-1">Demnächst</Text>
         <SyncStatusPill />
+        <Pressable
+          hitSlop={8}
+          onPress={() => router.push("/search" as never)}
+          accessibilityLabel="Suchen"
+        >
+          <Search color="#475569" size={20} />
+        </Pressable>
       </View>
 
       {isEmpty ? (
