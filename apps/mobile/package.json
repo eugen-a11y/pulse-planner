@@ -1,6 +1,6 @@
 {
   "name": "@pulse/mobile",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -11,7 +11,8 @@
     "build:prod": "eas build --profile production --platform ios",
     "submit": "eas submit --platform ios --profile production",
     "test": "jest",
-    "lint": "eslint src app test"
+    "lint": "eslint src app test",
+    "eas-build-post-install": "pnpm --filter @pulse/core build"
   },
   "dependencies": {
     "@babel/runtime": "^7.29.2",
