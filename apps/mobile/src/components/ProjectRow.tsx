@@ -51,7 +51,7 @@ export function ProjectRow({ project, onLongPress }: ProjectRowProps): JSX.Eleme
         style={{ backgroundColor: project.color }}
       />
       <View className="flex-1">
-        <Text className="text-sm text-ink" numberOfLines={1}>
+        <Text className="text-base text-ink" numberOfLines={1}>
           {project.name}
         </Text>
         <View className="flex-row items-center gap-2 mt-1">

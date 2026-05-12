@@ -89,14 +89,14 @@ export function TodayScreen(): JSX.Element {
   return (
     <View className="flex-1 bg-white">
       <View className="flex-row items-center px-4 py-3 border-b border-gray-200 gap-3">
-        <Text className="text-xl font-semibold text-ink flex-1">Heute · {weekday}</Text>
+        <Text className="text-2xl font-semibold text-ink flex-1">Heute · {weekday}</Text>
         <SyncStatusPill />
         <Pressable
           hitSlop={8}
           onPress={() => router.push("/search" as never)}
           accessibilityLabel="Suchen"
         >
-          <Search color="#475569" size={20} />
+          <Search color="#475569" size={26} />
         </Pressable>
       </View>
 

@@ -46,7 +46,7 @@ export function DashboardView(): JSX.Element {
           <Kpi label="Offen gesamt"      value={stats.open}     hint="über alle Projekte" />
           <Kpi label="Heute fällig"      value={stats.today}    hint="noch zu erledigen" tone="pulse" />
           <Kpi label="Überfällig"        value={stats.overdue}  hint="aufholen"           tone="red" />
-          <Kpi label="Erledigt · Woche"  value={stats.doneWeek} hint="diese ISO-Woche"    tone="emerald" />
+          <Kpi label="Erledigt · Woche"  value={stats.doneWeek} hint="diese Woche"    tone="emerald" />
         </div>
 
         <div>

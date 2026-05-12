@@ -1,19 +1,41 @@
-import { Text } from "react-native";
+import { View } from "react-native";
+import Svg, { Path, Text as SvgText } from "react-native-svg";
 
 /**
- * Tiny priority indicator. Mirrors apps/desktop/src/renderer/components/
- * PriorityBadge.tsx but uses RN <Text> + NativeWind class strings. The label
- * strings are intentionally identical to the desktop set so screenshots line
- * up across platforms.
+ * Priority indicator: rounded warning triangle with exclamation marks.
+ * Color encodes severity (red high → orange mid → green low), exclamation
+ * count reinforces it.
  */
-const LABEL: Record<number, string> = { 1: "▲▲▲", 2: "▲▲", 3: "▲", 4: "·" };
-const COLOR: Record<number, string> = {
-  1: "text-red-600",
-  2: "text-orange-500",
-  3: "text-yellow-600",
-  4: "text-gray-400",
+const CFG: Record<number, { color: string; marks: string }> = {
+  1: { color: "#DC2626", marks: "!!!" },
+  2: { color: "#F97316", marks: "!!" },
+  3: { color: "#16A34A", marks: "!" },
 };
 
-export function PriorityBadge({ priority }: { priority: 1 | 2 | 3 | 4 }): JSX.Element {
-  return <Text className={`text-xs ${COLOR[priority]}`}>{LABEL[priority]}</Text>;
+export function PriorityBadge({ priority }: { priority: 1 | 2 | 3 }): JSX.Element | null {
+  const cfg = CFG[priority];
+  if (!cfg) return null;
+  return (
+    <View style={{ width: 22, height: 20 }}>
+      <Svg width={22} height={20} viewBox="0 0 22 20">
+        <Path
+          d="M11 2 L20 17 H2 Z"
+          fill={cfg.color}
+          stroke={cfg.color}
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+        <SvgText
+          x={11}
+          y={16}
+          textAnchor="middle"
+          fontSize={cfg.marks.length >= 3 ? 7 : 8}
+          fontWeight="800"
+          fill="#FFFFFF"
+        >
+          {cfg.marks}
+        </SvgText>
+      </Svg>
+    </View>
+  );
 }

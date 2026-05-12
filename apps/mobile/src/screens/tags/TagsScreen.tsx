@@ -174,7 +174,7 @@ export function TagsScreen(): JSX.Element {
         >
           <ChevronLeft color="#2563EB" size={26} />
         </Pressable>
-        <Text className="text-xl font-semibold text-ink flex-1">Tags</Text>
+        <Text className="text-2xl font-semibold text-ink flex-1">Tags</Text>
         <Pressable
           hitSlop={8}
           onPress={onAddPress}

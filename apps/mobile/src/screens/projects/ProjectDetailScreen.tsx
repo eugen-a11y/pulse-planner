@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
-import { Plus } from "lucide-react-native";
+import { ChevronLeft, Plus } from "lucide-react-native";
 import { makeProjectNote, nowIso, type Note, type Project, type Task } from "@pulse/core";
 import { useProjects } from "@/stores/projects";
 import { useTasks } from "@/stores/tasks";
@@ -100,6 +100,13 @@ export function ProjectDetailScreen(): JSX.Element {
       {/* Header */}
       <View className="px-4 py-3 border-b border-gray-200 gap-2">
         <View className="flex-row items-center gap-3">
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            accessibilityLabel="Zurück"
+          >
+            <ChevronLeft color="#2563EB" size={26} />
+          </Pressable>
           <Pressable onPress={() => setSwatchOpen(true)} hitSlop={6}>
             <View
               className="w-4 h-4 rounded-full border border-black/10"
@@ -199,7 +206,7 @@ function EditableName({
   if (!editing) {
     return (
       <Pressable onPress={() => setEditing(true)} className="flex-1">
-        <Text className="text-xl font-semibold text-ink" numberOfLines={1}>
+        <Text className="text-2xl font-semibold text-ink" numberOfLines={1}>
           {value}
         </Text>
       </Pressable>

@@ -37,7 +37,7 @@ export function TaskRowItem({ task, showProject }: { task: Task; showProject?: b
         <span className={cn("text-sm truncate", task.status === "done" && "line-through text-gray-400")}>
           {task.title}
         </span>
-        <PriorityBadge priority={task.priority as 1 | 2 | 3 | 4} />
+        <PriorityBadge priority={task.priority as 1 | 2 | 3} />
       </div>
       <div className="flex items-center gap-3">
         <DueDateBadge iso={task.dueDate} />

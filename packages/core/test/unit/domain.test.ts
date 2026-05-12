@@ -55,7 +55,7 @@ describe("Task", () => {
     });
     expect(t.id).toBeTypeOf("string");
     expect(t.status).toBe<TaskStatus>("todo");
-    expect(t.priority).toBe(3);
+    expect(t.priority).toBe(2);
     expect(t.parentTaskId).toBeNull();
     expect(t.dueDate).toBeNull();
     expect(t.completedAt).toBeNull();
@@ -65,7 +65,7 @@ describe("Task", () => {
 
   it("TaskSchema rejects priority out of range", () => {
     const t = makeTask({ userId: "u", projectId: "p", title: "x" });
-    const r = TaskSchema.safeParse({ ...t, priority: 5 });
+    const r = TaskSchema.safeParse({ ...t, priority: 4 });
     expect(r.success).toBe(false);
   });
 

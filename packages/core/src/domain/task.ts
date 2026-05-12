@@ -26,7 +26,7 @@ export const TaskSchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().nullable(),
   status: z.enum(TASK_STATUSES),
-  priority: z.number().int().min(1).max(4),
+  priority: z.number().int().min(1).max(3),
   dueDate: z.string().nullable(),
   completedAt: z.string().nullable(),
   sortOrder: z.number().int(),
@@ -46,7 +46,7 @@ export interface MakeTaskInput {
   description?: string | null;
   parentTaskId?: string | null;
   status?: TaskStatus;
-  priority?: 1 | 2 | 3 | 4;
+  priority?: 1 | 2 | 3;
   dueDate?: string | null;
   sortOrder?: number;
   recurrenceRule?: string | null;
@@ -63,7 +63,7 @@ export function makeTask(input: MakeTaskInput): Task {
     title: input.title,
     description: input.description ?? null,
     status: input.status ?? "todo",
-    priority: input.priority ?? 3,
+    priority: input.priority ?? 2,
     dueDate: input.dueDate ?? null,
     completedAt: null,
     sortOrder: input.sortOrder ?? 0,

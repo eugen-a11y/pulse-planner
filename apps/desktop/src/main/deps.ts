@@ -24,6 +24,20 @@ function applyAdditiveMigrations(db: Database.Database): void {
   if (!projHas("due_date"))    db.exec("ALTER TABLE projects ADD COLUMN due_date TEXT");
   if (!projHas("description")) db.exec("ALTER TABLE projects ADD COLUMN description TEXT");
 
+  // 20260512000001 — priority scale 1-4 → 1-3. Idempotent via user_version.
+  //   1→1, 2→2, 3→2 (old default), 4→3
+  const versionRow = db.prepare("PRAGMA user_version").get() as { user_version: number };
+  if ((versionRow?.user_version ?? 0) < 1) {
+    db.exec(`
+      UPDATE tasks SET priority = CASE priority
+        WHEN 4 THEN 3
+        WHEN 3 THEN 2
+        ELSE priority
+      END WHERE priority IN (3, 4);
+      PRAGMA user_version = 1;
+    `);
+  }
+
   // 20260511000002 — tasks.project_id NOT NULL → nullable (Inbox).
   // SQLite can only drop NOT NULL via table rebuild.
   const taskCols = db.prepare("PRAGMA table_info(tasks)").all() as Array<{ name: string; notnull: number }>;

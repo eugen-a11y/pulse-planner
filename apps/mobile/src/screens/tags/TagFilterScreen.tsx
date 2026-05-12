@@ -143,12 +143,12 @@ export function TagFilterScreen(): JSX.Element {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: tag.color }}
             />
-            <Text className="text-xl font-semibold text-ink flex-1" numberOfLines={1}>
+            <Text className="text-2xl font-semibold text-ink flex-1" numberOfLines={1}>
               {tag.name}
             </Text>
           </>
         ) : (
-          <Text className="text-xl font-semibold text-ink flex-1">Tag</Text>
+          <Text className="text-2xl font-semibold text-ink flex-1">Tag</Text>
         )}
       </View>
 

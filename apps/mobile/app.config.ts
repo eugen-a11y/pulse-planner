@@ -6,14 +6,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "pulse-planner",
   owner: "deathrage94s-organization",
   scheme: "pulse",
-  version: "0.1.0",
+  version: "0.1.12",
   orientation: "portrait",
   userInterfaceStyle: "automatic",
   icon: "./assets/icon.png",
-  splash: { image: "./assets/splash.png", resizeMode: "contain", backgroundColor: "#FFFFFF" },
+  splash: { image: "./assets/icon.png", resizeMode: "contain", backgroundColor: "#FFFFFF" },
   ios: {
     bundleIdentifier: "me.reinfeld.pulse",
-    buildNumber: "1",
+    buildNumber: "13",
     supportsTablet: false,
     infoPlist: {
       UIBackgroundModes: ["fetch", "processing"],
@@ -30,6 +30,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-secure-store",
     "expo-sqlite",
     ["expo-notifications", { color: "#2563EB" }],
+    [
+      "expo-splash-screen",
+      {
+        backgroundColor: "#FFFFFF",
+        image: "./assets/icon.png",
+        imageWidth: 120,
+        resizeMode: "contain"
+      }
+    ],
     ["expo-build-properties", { ios: { useFrameworks: "static" } }],
     [
       "@bacons/apple-targets",

@@ -35,7 +35,7 @@ function Card({ task }: { task: Task }) {
         isDragging && "opacity-60 cursor-grabbing")}>
       <div className="font-medium truncate">{task.title}</div>
       <div className="flex items-center justify-between mt-1">
-        <PriorityBadge priority={task.priority as 1|2|3|4} />
+        <PriorityBadge priority={task.priority as 1|2|3} />
         <DueDateBadge iso={task.dueDate} />
       </div>
     </div>

@@ -15,9 +15,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Modal } from "react-native";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, X } from "lucide-react-native";
 import {
   makeComment,
+  nowIso,
   type Comment,
   type Task,
 } from "@pulse/core";
@@ -26,6 +27,7 @@ import { useProjects } from "@/stores/projects";
 import { useTags } from "@/stores/tags";
 import { useDeps } from "@/wiring/depsContext";
 import { MarkdownView } from "@/components/MarkdownView";
+import { PriorityBadge } from "@/components/PriorityBadge";
 import { DueDatePicker } from "@/components/DueDatePicker";
 import { RRulePicker, describeRRule } from "@/components/RRulePicker";
 import { TagPicker } from "@/components/TagPicker";
@@ -150,6 +152,10 @@ export function TaskDetailScreen(): JSX.Element {
             <Pressable onPress={() => router.back()} hitSlop={10}>
               <ArrowLeft color="#0F172A" size={22} />
             </Pressable>
+            <View className="flex-1" />
+            <Text className="text-xs text-ink-muted">
+              {done ? "Erledigt" : "Offen"}
+            </Text>
             <Pressable
               onPress={onToggleStatus}
               hitSlop={8}
@@ -160,9 +166,6 @@ export function TaskDetailScreen(): JSX.Element {
             >
               {done ? <Text className="text-white text-xs">✓</Text> : null}
             </Pressable>
-            <Text className="text-xs text-ink-muted">
-              {done ? "Erledigt" : "Offen"}
-            </Text>
           </View>
           <EditableTitle
             value={task.title}
@@ -199,6 +202,33 @@ export function TaskDetailScreen(): JSX.Element {
           }
           onPress={() => setRruleOpen(true)}
         />
+
+        {/* Priority */}
+        <View className="px-4 py-3 border-b border-gray-100 flex-row items-center">
+          <Text className="text-xs uppercase tracking-wide text-gray-500 w-32">
+            Priorität
+          </Text>
+          <View className="flex-1 flex-row items-center gap-2">
+            {[1, 2, 3].map((p) => {
+              const on = task.priority === p;
+              return (
+                <Pressable
+                  key={p}
+                  onPress={() => void update(taskId, { priority: p as 1 | 2 | 3 })}
+                  hitSlop={6}
+                  className={`rounded-md px-2 py-1.5 flex-row items-center gap-1.5 border ${
+                    on ? "border-pulse bg-pulse/10" : "border-gray-200 bg-white"
+                  }`}
+                >
+                  <PriorityBadge priority={p as 1 | 2 | 3} />
+                  <Text className={`text-xs ${on ? "text-pulse font-semibold" : "text-ink-muted"}`}>
+                    {p === 1 ? "Hoch" : p === 2 ? "Mittel" : "Niedrig"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {/* Tags */}
         <TagsRow taskId={taskId} onPress={() => setTagsOpen(true)} />
@@ -375,8 +405,18 @@ function TaskProjectPicker({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1 justify-end bg-black/40">
-        <Pressable onPress={() => {}} className="bg-white rounded-t-2xl pb-6 pt-3 max-h-[70%]">
+      <Pressable onPress={onClose} className="flex-1 justify-end">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white rounded-t-2xl pb-6 pt-3 max-h-[70%] border border-gray-300"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -3 },
+            shadowOpacity: 0.18,
+            shadowRadius: 14,
+            elevation: 12,
+          }}
+        >
           <View className="items-center pb-2">
             <View className="w-10 h-1 rounded-full bg-gray-300" />
           </View>
@@ -694,6 +734,23 @@ function CommentsSection({ taskId }: { taskId: string }): JSX.Element {
     }
   }
 
+  async function remove(id: string): Promise<void> {
+    try {
+      const ts = nowIso();
+      await deps.store.softDelete("comments", id, ts);
+      await deps.outbox.enqueue({
+        entityTable: "comments",
+        entityId: id,
+        op: "delete",
+        changedFields: {},
+        clientTs: ts,
+      });
+      await load();
+    } catch (e) {
+      Alert.alert("Fehler", (e as Error).message);
+    }
+  }
+
   return (
     <View className="px-4 py-3">
       <Text className="text-xs uppercase tracking-wide text-gray-500 pb-2">Kommentare</Text>
@@ -707,11 +764,21 @@ function CommentsSection({ taskId }: { taskId: string }): JSX.Element {
           keyExtractor={(c) => c.id}
           scrollEnabled={false}
           renderItem={({ item }) => (
-            <View className="mb-2 rounded border border-gray-200 p-3 bg-white">
-              <MarkdownView source={item.bodyMd} />
-              <Text className="text-[10px] text-gray-400 pt-2">
-                {format(parseISO(item.createdAt), "dd. MMM yyyy · HH:mm", { locale: de })}
-              </Text>
+            <View className="mb-2 rounded border border-gray-200 p-3 bg-white flex-row items-start gap-2">
+              <View className="flex-1">
+                <MarkdownView source={item.bodyMd} />
+                <Text className="text-[10px] text-gray-400 pt-2">
+                  {format(parseISO(item.createdAt), "dd. MMM yyyy · HH:mm", { locale: de })}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => void remove(item.id)}
+                hitSlop={10}
+                accessibilityLabel="Kommentar löschen"
+                className="p-1"
+              >
+                <X color="#94A3B8" size={18} />
+              </Pressable>
             </View>
           )}
         />

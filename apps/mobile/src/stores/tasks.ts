@@ -62,6 +62,14 @@ function indexBy(list: Task[]): Record<string, Task> {
   return out;
 }
 
+// Earlier dueDate first, undated at the very bottom, createdAt as tiebreak.
+function byDueDateAsc(a: Task, b: Task): number {
+  if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+  if (a.dueDate) return -1;
+  if (b.dueDate) return 1;
+  return b.createdAt.localeCompare(a.createdAt);
+}
+
 function serializeTaskForOutbox(t: Task): Record<string, unknown> {
   return {
     id: t.id, projectId: t.projectId, parentTaskId: t.parentTaskId,
@@ -86,7 +94,7 @@ interface TasksState {
   refreshProject: (projectId: string) => Promise<void>;
   create: (input: {
     projectId: string | null; title: string;
-    dueDate?: string | null; priority?: 1 | 2 | 3 | 4;
+    dueDate?: string | null; priority?: 1 | 2 | 3;
     parentTaskId?: string | null; description?: string | null;
   }) => Promise<Task>;
   update: (id: string, fields: Partial<Task>) => Promise<void>;
@@ -111,6 +119,7 @@ export const useTasks = create<TasksState>((set, get) => ({
     const list = all.filter((t) =>
       t.status !== "done" && t.dueDate !== null && t.dueDate <= cutoff,
     );
+    list.sort(byDueDateAsc);
     set((s) => ({
       byId: { ...s.byId, ...indexBy(list) },
       todayIds: list.map((t) => t.id),
@@ -132,6 +141,7 @@ export const useTasks = create<TasksState>((set, get) => ({
       t.status !== "done" && t.dueDate !== null &&
       t.dueDate > startCutoff && t.dueDate <= endCutoff,
     );
+    list.sort(byDueDateAsc);
     set((s) => ({
       byId: { ...s.byId, ...indexBy(list) },
       upcomingIds: list.map((t) => t.id),
@@ -145,6 +155,7 @@ export const useTasks = create<TasksState>((set, get) => ({
     const userId = requireUserId();
     const all = await d.store.listSince<Task>("tasks", null, { userId });
     const list = all.filter((t) => t.projectId === null);
+    list.sort(byDueDateAsc);
     set((s) => ({
       byId: { ...s.byId, ...indexBy(list) },
       inboxIds: list.map((t) => t.id),
@@ -158,6 +169,7 @@ export const useTasks = create<TasksState>((set, get) => ({
     const userId = requireUserId();
     const all = await d.store.listSince<Task>("tasks", null, { userId });
     const list = all.filter((t) => t.projectId === projectId);
+    list.sort(byDueDateAsc);
     set((s) => ({
       byId: { ...s.byId, ...indexBy(list) },
       byProject: { ...s.byProject, [projectId]: list.map((t) => t.id) },
@@ -229,7 +241,7 @@ export const useTasks = create<TasksState>((set, get) => ({
             projectId: local.projectId,
             title: local.title,
             description: local.description,
-            priority: local.priority as 1 | 2 | 3 | 4,
+            priority: local.priority as 1 | 2 | 3,
             dueDate: next.toISOString(),
             parentTaskId: local.parentTaskId,
             recurrenceRule: local.recurrenceRule,

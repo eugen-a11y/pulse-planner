@@ -6,11 +6,10 @@ import { ProjectPicker } from "../components/ProjectPicker.js";
 import { RecurrenceField } from "../components/RecurrenceField.js";
 import { TagPicker } from "../components/TagPicker.js";
 
-const PRIORITIES: Array<{ value: 1 | 2 | 3 | 4; label: string }> = [
-  { value: 1, label: "▲▲▲ Hoch" },
-  { value: 2, label: "▲▲ Mittel" },
-  { value: 3, label: "▲ Normal" },
-  { value: 4, label: "· Niedrig" },
+const PRIORITIES: Array<{ value: 1 | 2 | 3; label: string }> = [
+  { value: 1, label: "!!! Hoch" },
+  { value: 2, label: "!! Mittel" },
+  { value: 3, label: "! Niedrig" },
 ];
 
 export function TaskMeta({ task }: { task: Task }) {
@@ -31,7 +30,7 @@ export function TaskMeta({ task }: { task: Task }) {
       </Row>
       <Row label="Priorität">
         <select className="bg-transparent" value={task.priority}
-          onChange={(e) => void update(task.id, { priority: Number(e.target.value) as 1|2|3|4 })}>
+          onChange={(e) => void update(task.id, { priority: Number(e.target.value) as 1|2|3 })}>
           {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
         </select>
       </Row>

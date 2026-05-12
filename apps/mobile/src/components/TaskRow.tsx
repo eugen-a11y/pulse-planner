@@ -13,7 +13,7 @@ import { DueDateBadge } from "./DueDateBadge";
  *
  *   • Tap row → router.push("/task/<id>") (target screen lands in Task 14).
  *   • Tap checkbox → complete() or re-open via update({ status: "todo", ... }).
- *   • Swipe-left → red "Erledigt" action that completes the task.
+ *   • Swipe-left → red "Löschen" action that soft-deletes the task.
  *   • Long-press → iOS ActionSheet with Erledigen / [extraActions…] / Löschen
  *     / Abbrechen. `extraActions` is the screen-specific extension surface used
  *     e.g. by the Inbox screen to inject "Verschieben in Projekt…".
@@ -77,11 +77,11 @@ export function TaskRow({ task, extraActions = [] }: TaskRowProps): JSX.Element 
       <Pressable
         onPress={() => {
           swipeRef.current?.close();
-          void complete(task.id);
+          void remove(task.id);
         }}
         className="bg-red-600 justify-center items-center px-5"
       >
-        <Text className="text-white text-sm font-medium">Erledigt</Text>
+        <Text className="text-white text-sm font-medium">Löschen</Text>
       </Pressable>
     );
   }
@@ -105,11 +105,11 @@ export function TaskRow({ task, extraActions = [] }: TaskRowProps): JSX.Element 
         <View className="flex-1 flex-row items-center gap-2">
           <Text
             numberOfLines={1}
-            className={`flex-1 text-sm ${done ? "line-through text-gray-400" : "text-ink"}`}
+            className={`flex-1 text-base ${done ? "line-through text-gray-400" : "text-ink"}`}
           >
             {task.title}
           </Text>
-          <PriorityBadge priority={task.priority as 1 | 2 | 3 | 4} />
+          <PriorityBadge priority={task.priority as 1 | 2 | 3} />
         </View>
         <DueDateBadge iso={task.dueDate} />
       </Pressable>

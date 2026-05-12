@@ -35,10 +35,17 @@ export function ColorSwatchPopover({
 }: ColorSwatchPopoverProps): JSX.Element {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1 justify-end bg-black/40">
+      <Pressable onPress={onClose} className="flex-1 justify-end">
         <Pressable
           onPress={() => {}}
-          className="bg-white rounded-t-2xl pb-6 pt-3"
+          className="bg-white rounded-t-2xl pb-6 pt-3 border border-gray-300"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -3 },
+            shadowOpacity: 0.18,
+            shadowRadius: 14,
+            elevation: 12,
+          }}
         >
           <View className="items-center pb-2">
             <View className="w-10 h-1 rounded-full bg-gray-300" />

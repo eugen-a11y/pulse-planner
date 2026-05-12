@@ -24,6 +24,14 @@ async function tasksChanged(deps: AppDeps, getWin: () => BrowserWindow | null): 
   void rescheduleFromStore(deps);
 }
 
+// Earlier dueDate first, undated at the very bottom, createdAt as tiebreak.
+function byDueDateAsc(a: Task, b: Task): number {
+  if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+  if (a.dueDate) return -1;
+  if (b.dueDate) return 1;
+  return b.createdAt.localeCompare(a.createdAt);
+}
+
 export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): void {
   // Background-sync lifecycle: realtime subscription + 60s backstop.
   // Per spec (desktop-design.md §5.4): pull triggers are app start, realtime
@@ -175,13 +183,14 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
   ipcMain.handle("tasks.list", async (_e, filter: { projectId?: string }) => {
     const userId = requireUser(deps);
     const all = await deps.store.listSince<Task>("tasks", null, { userId });
-    return filter.projectId ? all.filter((t) => t.projectId === filter.projectId) : all;
+    const filtered = filter.projectId ? all.filter((t) => t.projectId === filter.projectId) : all;
+    return filtered.sort(byDueDateAsc);
   });
 
   ipcMain.handle("tasks.listInbox", async () => {
     const userId = requireUser(deps);
     const all = await deps.store.listSince<Task>("tasks", null, { userId });
-    return all.filter((t) => t.projectId === null);
+    return all.filter((t) => t.projectId === null).sort(byDueDateAsc);
   });
 
   ipcMain.handle("tasks.listToday", async () => {
@@ -189,7 +198,9 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const all = await deps.store.listSince<Task>("tasks", null, { userId });
     const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
     const cutoff = todayEnd.toISOString();
-    return all.filter((t) => t.status !== "done" && t.dueDate !== null && t.dueDate <= cutoff);
+    return all
+      .filter((t) => t.status !== "done" && t.dueDate !== null && t.dueDate <= cutoff)
+      .sort(byDueDateAsc);
   });
 
   ipcMain.handle("tasks.listUpcoming", async () => {
@@ -199,15 +210,17 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const sevenDays = new Date(); sevenDays.setDate(sevenDays.getDate() + 7);
     const startCutoff = todayEnd.toISOString();
     const endCutoff = sevenDays.toISOString();
-    return all.filter((t) =>
-      t.status !== "done" && t.dueDate !== null &&
-      t.dueDate > startCutoff && t.dueDate <= endCutoff,
-    );
+    return all
+      .filter((t) =>
+        t.status !== "done" && t.dueDate !== null &&
+        t.dueDate > startCutoff && t.dueDate <= endCutoff,
+      )
+      .sort(byDueDateAsc);
   });
 
   ipcMain.handle("tasks.create", async (_e, input: {
     projectId: string | null; title: string;
-    dueDate?: string | null; priority?: 1 | 2 | 3 | 4;
+    dueDate?: string | null; priority?: 1 | 2 | 3;
     parentTaskId?: string | null; description?: string | null;
   }) => {
     const userId = requireUser(deps);
@@ -282,7 +295,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
             projectId: local.projectId,
             title: local.title,
             description: local.description,
-            priority: local.priority as 1 | 2 | 3 | 4,
+            priority: local.priority as 1 | 2 | 3,
             dueDate: next.toISOString(),
             parentTaskId: local.parentTaskId,
             recurrenceRule: local.recurrenceRule,
@@ -500,7 +513,7 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     const { parseQuickAdd } = await import("@pulse/core");
     return parseQuickAdd(text, refs);
   });
-  ipcMain.handle("quickAdd.submit", async (_e, parsed: { title: string; projectId: string | null; dueDate: string | null; priority: 1|2|3|4; tagNames: string[] }) => {
+  ipcMain.handle("quickAdd.submit", async (_e, parsed: { title: string; projectId: string | null; dueDate: string | null; priority: 1|2|3; tagNames: string[] }) => {
     const userId = requireUser(deps);
     // No @projekt → projectId stays null → task lands in Inbox.
     const t = makeTask({

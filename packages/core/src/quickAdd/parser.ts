@@ -4,21 +4,21 @@ export interface ParsedQuickAdd {
   title: string;
   projectId: string | null;
   dueDate: string | null;
-  priority: 1 | 2 | 3 | 4;
+  priority: 1 | 2 | 3;
   tagNames: string[];
 }
 
 interface ProjectRef { id: string; name: string; }
 
 const TAG_RE = /(^|\s)#([a-zA-ZäöüÄÖÜß0-9_-]+)/g;
-const PRIORITY_RE = /(^|\s)!([1-4])\b/;
+const PRIORITY_RE = /(^|\s)!([1-3])\b/;
 const PROJECT_RE = /(^|\s)@([a-zA-ZäöüÄÖÜß0-9_-]+)/g;
 
 export function parseQuickAdd(input: string, projects: readonly ProjectRef[]): ParsedQuickAdd {
   let text = input;
   const tagNames: string[] = [];
   let projectId: string | null = null;
-  let priority: 1 | 2 | 3 | 4 = 3;
+  let priority: 1 | 2 | 3 = 2;
 
   // tags
   text = text.replace(TAG_RE, (_m, lead: string, t: string) => { tagNames.push(t); return lead; });
@@ -26,7 +26,7 @@ export function parseQuickAdd(input: string, projects: readonly ProjectRef[]): P
   // priority
   const pm = PRIORITY_RE.exec(text);
   if (pm) {
-    priority = (Number(pm[2]) as 1 | 2 | 3 | 4);
+    priority = (Number(pm[2]) as 1 | 2 | 3);
     text = text.replace(PRIORITY_RE, "$1").trim();
   }
 

@@ -39,7 +39,27 @@ function assertAllowed(t: SyncTable): void {
  */
 export async function openExpoSqliteStore(db: SQLiteDatabase): Promise<ExpoSqliteStore> {
   await db.execAsync(ALL_DDL);
+  await applyMobileMigrations(db);
   return new ExpoSqliteStore(db);
+}
+
+/**
+ * Idempotent local migrations gated by PRAGMA user_version.
+ *   v1 — priority scale 1-4 → 1-3 (1→1, 2→2, 3→2, 4→3).
+ */
+async function applyMobileMigrations(db: SQLiteDatabase): Promise<void> {
+  const row = await db.getFirstAsync<{ user_version: number }>("PRAGMA user_version");
+  const version = row?.user_version ?? 0;
+  if (version < 1) {
+    await db.execAsync(`
+      UPDATE tasks SET priority = CASE priority
+        WHEN 4 THEN 3
+        WHEN 3 THEN 2
+        ELSE priority
+      END WHERE priority IN (3, 4);
+      PRAGMA user_version = 1;
+    `);
+  }
 }
 
 export class ExpoSqliteStore implements LocalStore {

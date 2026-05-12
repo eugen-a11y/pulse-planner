@@ -13,7 +13,7 @@ describe("parseQuickAdd", () => {
     expect(r.title).toBe("Storyboard schreiben");
     expect(r.projectId).toBeNull();
     expect(r.dueDate).toBeNull();
-    expect(r.priority).toBe(3);
+    expect(r.priority).toBe(2);
     expect(r.tagNames).toEqual([]);
   });
 

@@ -9,7 +9,7 @@ export function registerTask(program: Command): void {
     .requiredOption("--project <id>")
     .requiredOption("--title <title>")
     .option("--due <iso>", "ISO due date", "")
-    .option("--priority <n>", "1-4", "3")
+    .option("--priority <n>", "1-3", "2")
     .action(async (opts: { project: string; title: string; due: string; priority: string }) => {
       const ctx = buildContext();
       const { userId } = await restoreOrFail(ctx);
@@ -18,7 +18,7 @@ export function registerTask(program: Command): void {
         projectId: opts.project,
         title: opts.title,
         dueDate: opts.due ? opts.due : null,
-        priority: Math.min(4, Math.max(1, parseInt(opts.priority, 10))) as 1 | 2 | 3 | 4,
+        priority: Math.min(3, Math.max(1, parseInt(opts.priority, 10))) as 1 | 2 | 3,
       });
       await ctx.store.upsert("tasks", task);
       await ctx.outbox.enqueue({

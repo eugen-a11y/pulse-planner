@@ -168,7 +168,7 @@ export function QuickAddSheet({
               multiline={false}
               returnKeyType="done"
               onSubmitEditing={() => void onSubmit()}
-              placeholder="Title  @projekt  !1-4  morgen 9:00  #tag"
+              placeholder="Title  @projekt  !1-3  morgen 9:00  #tag"
               placeholderTextColor="#94A3B8"
               style={{
                 height: 44,
@@ -185,7 +185,7 @@ export function QuickAddSheet({
             </Text>
           </View>
 
-          {(projectForChip || parsed.dueDate || parsed.priority < 4 || parsed.tagNames.length > 0) && (
+          {(projectForChip || parsed.dueDate || parsed.priority !== 2 || parsed.tagNames.length > 0) && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -210,16 +210,14 @@ export function QuickAddSheet({
                   </Text>
                 </View>
               )}
-              {parsed.priority < 4 && (
+              {parsed.priority !== 2 && (
                 <View
                   className="rounded-full px-2.5 py-1"
                   style={{
                     backgroundColor:
                       parsed.priority === 1
                         ? "#FEE2E2"
-                        : parsed.priority === 2
-                          ? "#FFEDD5"
-                          : "#FEF9C3",
+                        : "#DCFCE7",
                   }}
                 >
                   <Text
@@ -228,9 +226,7 @@ export function QuickAddSheet({
                       color:
                         parsed.priority === 1
                           ? "#B91C1C"
-                          : parsed.priority === 2
-                            ? "#C2410C"
-                            : "#A16207",
+                          : "#15803D",
                     }}
                   >
                     P{parsed.priority}

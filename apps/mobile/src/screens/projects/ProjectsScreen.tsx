@@ -138,21 +138,21 @@ export function ProjectsScreen(): JSX.Element {
   return (
     <View className="flex-1 bg-white">
       <View className="flex-row items-center px-4 py-3 border-b border-gray-200 gap-3">
-        <Text className="text-xl font-semibold text-ink flex-1">Projekte</Text>
+        <Text className="text-2xl font-semibold text-ink flex-1">Projekte</Text>
         <SyncStatusPill />
         <Pressable
           hitSlop={8}
           onPress={() => router.push("/tags" as never)}
           accessibilityLabel="Tags verwalten"
         >
-          <TagIcon color="#475569" size={20} />
+          <TagIcon color="#475569" size={26} />
         </Pressable>
         <Pressable
           hitSlop={8}
           onPress={() => router.push("/search" as never)}
           accessibilityLabel="Suchen"
         >
-          <Search color="#475569" size={20} />
+          <Search color="#475569" size={26} />
         </Pressable>
       </View>
 

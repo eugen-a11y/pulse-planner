@@ -1,7 +1,7 @@
 import "../global.css";
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Alert, AppState, type AppStateStatus } from "react-native";
+import { ActivityIndicator, Alert, AppState, Image, View, type AppStateStatus } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
@@ -243,7 +243,17 @@ export default function RootLayout() {
     };
   }, [deps, session, router]);
 
-  if (!deps) return null;
+  if (!deps) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" }}>
+        <Image
+          source={require("../assets/icon.png")}
+          style={{ width: 96, height: 96, marginBottom: 24 }}
+        />
+        <ActivityIndicator color="#2563EB" />
+      </View>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -48,7 +48,7 @@ export interface PulseApi {
     tagsForTask(taskId: string): Promise<string[]>;
     create(input: {
       projectId: string | null; title: string;
-      dueDate?: string | null; priority?: 1 | 2 | 3 | 4;
+      dueDate?: string | null; priority?: 1 | 2 | 3;
       parentTaskId?: string | null; description?: string | null;
     }): Promise<Task>;
     update(id: string, fields: Partial<Task>): Promise<Task>;
