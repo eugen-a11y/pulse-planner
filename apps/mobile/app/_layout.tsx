@@ -1,6 +1,9 @@
+import "../global.css";
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AppState, type AppStateStatus } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 import * as Linking from "expo-linking";
 import { buildDeps, type MobileDeps } from "@/wiring/deps";
@@ -194,10 +197,19 @@ export default function RootLayout() {
   // completed (loading === false), redirect to /auth/login when there is no
   // active session. Re-runs on session change: sign-in flips session → guard
   // is a no-op; sign-out flips session → guard redirects.
+  const didInitialRouteRef = useRef(false);
   useEffect(() => {
     if (!deps) return;
     if (authLoading) return;
-    if (!session) router.replace("/auth/login");
+    if (!session) {
+      router.replace("/auth/login");
+      didInitialRouteRef.current = false;
+      return;
+    }
+    if (!didInitialRouteRef.current) {
+      didInitialRouteRef.current = true;
+      router.replace("/(tabs)/today");
+    }
   }, [deps, session, authLoading, router]);
 
   // Deep-link handler. Supports:
@@ -229,17 +241,21 @@ export default function RootLayout() {
   if (!deps) return null;
 
   return (
-    <DepsProvider value={deps}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="auth" />
-        <Stack.Screen name="project/[id]" />
-        <Stack.Screen name="task/[id]" />
-        <Stack.Screen name="tags/index" />
-        <Stack.Screen name="tags/[id]" />
-        <Stack.Screen name="search" />
-        <Stack.Screen name="settings/dlq" />
-      </Stack>
-    </DepsProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <DepsProvider value={deps}>
+          <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="auth" />
+          <Stack.Screen name="project/[id]" />
+          <Stack.Screen name="task/[id]" />
+          <Stack.Screen name="tags/index" />
+          <Stack.Screen name="tags/[id]" />
+          <Stack.Screen name="search" />
+          <Stack.Screen name="settings/dlq" />
+          </Stack>
+        </DepsProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

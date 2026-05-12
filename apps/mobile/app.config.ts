@@ -8,6 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: "pulse",
   version: "0.1.0",
   orientation: "portrait",
+  userInterfaceStyle: "automatic",
   icon: "./assets/icon.png",
   splash: { image: "./assets/splash.png", resizeMode: "contain", backgroundColor: "#FFFFFF" },
   ios: {
@@ -27,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     "expo-router",
     "expo-secure-store",
+    "expo-sqlite",
     ["expo-notifications", { color: "#2563EB" }],
     ["expo-build-properties", { ios: { useFrameworks: "static" } }],
     [

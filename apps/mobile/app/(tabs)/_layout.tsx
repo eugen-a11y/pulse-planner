@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { CalendarDays, Inbox, Folder, Settings, Sun } from "lucide-react-native";
 
 /**
@@ -9,7 +10,8 @@ import { CalendarDays, Inbox, Folder, Settings, Sun } from "lucide-react-native"
  */
 export default function TabLayout(): JSX.Element {
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: "#2563EB" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }} edges={["top"]}>
+      <Tabs screenOptions={{ tabBarActiveTintColor: "#2563EB", headerShown: false }}>
       <Tabs.Screen
         name="today"
         options={{ title: "Heute", tabBarIcon: ({ color }) => <Sun color={color} /> }}
@@ -30,6 +32,7 @@ export default function TabLayout(): JSX.Element {
         name="settings"
         options={{ title: "Settings", tabBarIcon: ({ color }) => <Settings color={color} /> }}
       />
-    </Tabs>
+      </Tabs>
+    </SafeAreaView>
   );
 }

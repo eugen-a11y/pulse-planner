@@ -17,6 +17,7 @@ import { useDeps } from "@/wiring/depsContext";
 import { ProjectRow } from "@/components/ProjectRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
+import { TaskFAB } from "@/components/TaskFAB";
 
 /**
  * Projects list screen. Two collapsible sections:
@@ -152,16 +153,6 @@ export function ProjectsScreen(): JSX.Element {
         >
           <Search color="#475569" size={20} />
         </Pressable>
-        <Pressable
-          hitSlop={8}
-          onPress={() => setQuickAddOpen(true)}
-          accessibilityLabel="Quick-Add"
-        >
-          <Zap color="#2563EB" size={20} />
-        </Pressable>
-        <Pressable hitSlop={8} onPress={onAddPress} accessibilityLabel="Neues Projekt">
-          <Plus color="#2563EB" size={22} />
-        </Pressable>
       </View>
 
       <FlatList
@@ -210,6 +201,8 @@ export function ProjectsScreen(): JSX.Element {
           </View>
         }
       />
+
+      <TaskFAB onPress={onAddPress} />
 
       <QuickAddSheet
         visible={quickAddOpen}

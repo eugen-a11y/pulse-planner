@@ -21,6 +21,8 @@ import { TaskRow } from "@/components/TaskRow";
 import { ColorSwatchPopover } from "@/components/ColorSwatchPopover";
 import { DueDatePicker } from "@/components/DueDatePicker";
 import { MarkdownView } from "@/components/MarkdownView";
+import { QuickAddSheet } from "@/components/QuickAddSheet";
+import { TaskFAB } from "@/components/TaskFAB";
 
 /**
  * Project detail screen. Mirrors `apps/desktop/src/renderer/project/ProjectView.tsx`
@@ -54,6 +56,7 @@ export function ProjectDetailScreen(): JSX.Element {
   const [tab, setTab] = useState<"tasks" | "notes">("tasks");
   const [swatchOpen, setSwatchOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const triedRefresh = useRef(false);
 
   // If the project isn't in the store yet (cold open via deep link), kick a
@@ -156,6 +159,16 @@ export function ProjectDetailScreen(): JSX.Element {
         value={project.dueDate}
         onPick={(dueDate) => void update(projectId, { dueDate })}
         onClose={() => setDateOpen(false)}
+      />
+
+      {tab === "tasks" && (
+        <TaskFAB onPress={() => setQuickAddOpen(true)} aboveTabBar={false} />
+      )}
+
+      <QuickAddSheet
+        visible={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        defaultProjectId={projectId}
       />
     </View>
   );

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -104,18 +106,52 @@ export function QuickAddSheet({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <Pressable onPress={onClose} className="flex-1 justify-end bg-black/40">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+      <Pressable
+        onPress={onClose}
+        style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}
+      >
         <Pressable
           // Stop tap-through so taps on the card don't close the sheet.
           onPress={() => {}}
-          className="bg-white rounded-t-2xl pb-6 pt-3"
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            paddingBottom: 24,
+            paddingTop: 12,
+          }}
         >
-          <View className="items-center pb-2">
-            <View className="w-10 h-1 rounded-full bg-gray-300" />
+          <View style={{ alignItems: "center", paddingBottom: 8 }}>
+            <View
+              style={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: "#D1D5DB",
+              }}
+            />
           </View>
 
-          <View className="flex-row items-center px-4 pb-2">
-            <Text className="text-base font-semibold text-ink flex-1">
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 16,
+              paddingBottom: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: "#0F172A",
+                flex: 1,
+              }}
+            >
               Quick-Add
             </Text>
             <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Schließen">
@@ -123,7 +159,7 @@ export function QuickAddSheet({
             </Pressable>
           </View>
 
-          <View className="px-4">
+          <View style={{ paddingHorizontal: 16 }}>
             <TextInput
               autoFocus
               value={text}
@@ -134,9 +170,17 @@ export function QuickAddSheet({
               onSubmitEditing={() => void onSubmit()}
               placeholder="Title  @projekt  !1-4  morgen 9:00  #tag"
               placeholderTextColor="#94A3B8"
-              className="h-11 px-3 text-sm text-ink border border-gray-300 rounded-md"
+              style={{
+                height: 44,
+                paddingHorizontal: 12,
+                fontSize: 14,
+                color: "#0F172A",
+                borderWidth: 1,
+                borderColor: "#D1D5DB",
+                borderRadius: 6,
+              }}
             />
-            <Text className="text-xs text-gray-400 mt-1">
+            <Text style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>
               Ohne @projekt landet die Aufgabe in der Inbox
             </Text>
           </View>
@@ -204,18 +248,26 @@ export function QuickAddSheet({
             </ScrollView>
           )}
 
-          <View className="px-4 pt-4">
+          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
             <Pressable
               disabled={!canSubmit}
               onPress={() => void onSubmit()}
-              className={`rounded-md py-3 items-center ${canSubmit ? "bg-pulse" : "bg-gray-300"}`}
+              style={{
+                borderRadius: 6,
+                paddingVertical: 12,
+                alignItems: "center",
+                backgroundColor: canSubmit ? "#2563EB" : "#D1D5DB",
+              }}
               accessibilityLabel="Aufgabe anlegen"
             >
-              <Text className="text-sm font-semibold text-white">Anlegen</Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFFFFF" }}>
+                Anlegen
+              </Text>
             </Pressable>
           </View>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

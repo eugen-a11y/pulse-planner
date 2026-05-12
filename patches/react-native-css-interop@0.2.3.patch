@@ -1,0 +1,12 @@
+diff --git a/babel.js b/babel.js
+index d84e52b5ccf59123bb7aee019a853724b20ef99f..8d663083a228e51dc3d9f26c110b39090a2adf00 100644
+--- a/babel.js
++++ b/babel.js	
+@@ -10,7 +10,6 @@ module.exports = function () {
+         },
+       ],
+       // Use this plugin in reanimated 4 and later
+-      "react-native-worklets/plugin",
+     ],
+   };
+ };

@@ -15,6 +15,7 @@ import { TaskRow } from "@/components/TaskRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
 import { ProjectPickerSheet } from "@/components/ProjectPickerSheet";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
+import { TaskFAB } from "@/components/TaskFAB";
 
 /**
  * Inbox screen. Mirrors apps/desktop/src/renderer/inbox/InboxView.tsx in shape
@@ -87,13 +88,6 @@ export function InboxScreen(): JSX.Element {
         <SyncStatusPill />
         <Pressable
           hitSlop={8}
-          onPress={() => setQuickAddOpen(true)}
-          accessibilityLabel="Quick-Add"
-        >
-          <Plus color="#2563EB" size={22} />
-        </Pressable>
-        <Pressable
-          hitSlop={8}
           onPress={() => router.push("/search" as never)}
           accessibilityLabel="Suchen"
         >
@@ -134,6 +128,8 @@ export function InboxScreen(): JSX.Element {
           }
         />
       )}
+
+      <TaskFAB onPress={() => setQuickAddOpen(true)} />
 
       <ProjectPickerSheet
         visible={movingId !== null}

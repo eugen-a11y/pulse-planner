@@ -16,6 +16,7 @@ import { useDeps } from "@/wiring/depsContext";
 import { TaskRow } from "@/components/TaskRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
+import { TaskFAB } from "@/components/TaskFAB";
 
 /**
  * Today screen. Mirrors apps/desktop/src/renderer/today/TodayView.tsx structure:
@@ -91,13 +92,6 @@ export function TodayScreen(): JSX.Element {
         <SyncStatusPill />
         <Pressable
           hitSlop={8}
-          onPress={() => setQuickAddOpen(true)}
-          accessibilityLabel="Quick-Add"
-        >
-          <Plus color="#2563EB" size={22} />
-        </Pressable>
-        <Pressable
-          hitSlop={8}
           onPress={() => router.push("/search" as never)}
           accessibilityLabel="Suchen"
         >
@@ -138,6 +132,8 @@ export function TodayScreen(): JSX.Element {
           }
         />
       )}
+
+      <TaskFAB onPress={() => setQuickAddOpen(true)} />
 
       <QuickAddSheet
         visible={quickAddOpen}
