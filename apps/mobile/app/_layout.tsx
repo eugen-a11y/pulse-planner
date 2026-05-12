@@ -7,6 +7,7 @@ import { buildDeps, type MobileDeps } from "@/wiring/deps";
 import { DepsProvider } from "@/wiring/depsContext";
 import { bindStoresToDeps, refreshAll, useAuth, patchStatus } from "@/stores";
 import { reconcileNotifications } from "@/notifications";
+import { emitWidgetSnapshotFor } from "@/stores/tasks";
 import {
   drainPendingActions,
   ensureNotificationCategoryRegistered,
@@ -88,6 +89,11 @@ export default function RootLayout() {
         await refreshAll(deps!);
         await patchStatus({ lastPullAt: new Date().toISOString(), lastError: null });
         void reconcileNotifications();
+        // Widget snapshot — best-effort, never blocks the pull loop. The
+        // `refreshAll` above just refreshed `useTasks` so `refreshToday()`
+        // already triggered a write; this second call covers the case where
+        // `refreshAll` doesn't include today (e.g. future refactors).
+        void emitWidgetSnapshotFor(deps!);
       } catch (e) {
         const msg = (e as Error).message;
         if (/401|unauthor|jwt/i.test(msg)) {

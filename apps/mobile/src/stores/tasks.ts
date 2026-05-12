@@ -1,8 +1,43 @@
 import { create } from "zustand";
 import { rrulestr } from "rrule";
-import { makeTask, nowIso, type Task } from "@pulse/core";
+import { makeTask, nowIso, type Task, type Project } from "@pulse/core";
 import type { MobileDeps } from "@/wiring/deps";
 import { reconcileNotificationsDebounced } from "@/notifications";
+import { buildTodaySnapshot, writeSnapshot } from "@/platform/WidgetData";
+
+/**
+ * Write the iOS Today widget snapshot. Best-effort: any failure is swallowed
+ * inside writeSnapshot() (logs to console.warn) so widget IO never crashes a
+ * store action. Reads from raw `deps.store` rather than the in-memory zustand
+ * `byId` so it stays accurate for the inbox/upcoming code paths that don't
+ * touch `todayIds`.
+ */
+async function emitWidgetSnapshot(d: MobileDeps): Promise<void> {
+  if (!d.userId) return;
+  try {
+    const [tasks, projects] = await Promise.all([
+      d.store.listSince<Task>("tasks", null, { userId: d.userId }),
+      d.store.listSince<Project>("projects", null, { userId: d.userId }),
+    ]);
+    const snap = buildTodaySnapshot({
+      now: new Date(),
+      tasks: tasks.map((t) => ({
+        id: t.id, title: t.title, dueDate: t.dueDate,
+        status: t.status, deletedAt: t.deletedAt, projectId: t.projectId,
+      })),
+      projects: projects.map((p) => ({ id: p.id, color: p.color })),
+    });
+    await writeSnapshot(snap);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[tasks] emitWidgetSnapshot failed:", (e as Error).message);
+  }
+}
+
+/** Exposed so app/_layout can fire-and-forget the widget write after a pull. */
+export async function emitWidgetSnapshotFor(d: MobileDeps): Promise<void> {
+  return emitWidgetSnapshot(d);
+}
 
 /**
  * Mobile tasks store. Mirrors `apps/desktop/src/renderer/stores/tasks.ts`
@@ -82,6 +117,7 @@ export const useTasks = create<TasksState>((set, get) => ({
       loaded: true,
     }));
     reconcileNotificationsDebounced();
+    void emitWidgetSnapshot(d);
   },
 
   async refreshUpcoming() {
@@ -142,6 +178,7 @@ export const useTasks = create<TasksState>((set, get) => ({
     });
     if (input.projectId) await get().refreshProject(input.projectId);
     else await get().refreshInbox();
+    void emitWidgetSnapshot(d);
     return t;
   },
 
