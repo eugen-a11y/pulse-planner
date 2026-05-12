@@ -98,9 +98,14 @@ export default function RootLayout() {
       if (!deps!.engine) return;
       setSyncState("syncing");
       try {
+        await deps!.engine.push();
         await deps!.engine.pull();
         await refreshAll(deps!);
-        await patchStatus({ lastPullAt: new Date().toISOString(), lastError: null });
+        await patchStatus({
+          lastPushAt: new Date().toISOString(),
+          lastPullAt: new Date().toISOString(),
+          lastError: null,
+        });
         setSyncState("idle");
         void reconcileNotifications();
         // Widget snapshot — best-effort, never blocks the pull loop. The

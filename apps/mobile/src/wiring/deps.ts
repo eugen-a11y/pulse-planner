@@ -43,6 +43,25 @@ export async function buildDeps(): Promise<MobileDeps> {
   const supabase = createPulseSupabaseClient({ url, anonKey });
   const auth = new AuthService(supabase, new SecureStoreTokenStorage());
 
+  // After every outbox enqueue, fire a debounced push so mobile mutations
+  // reach Supabase within ~200ms instead of waiting for the 60s backstop or
+  // the next manual pull. Mirrors desktop's `pushAfterMutation`.
+  let pushTimer: ReturnType<typeof setTimeout> | null = null;
+  const originalEnqueue = outbox.enqueue.bind(outbox);
+  outbox.enqueue = async (entry) => {
+    const result = await originalEnqueue(entry);
+    if (pushTimer) clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => {
+      pushTimer = null;
+      const engine = deps.engine;
+      if (!engine) return;
+      void engine.push().catch(() => {
+        // Push errors are surfaced via outbox.lastError → DLQ screen.
+      });
+    }, 200);
+    return result;
+  };
+
   const deps: MobileDeps = {
     db,
     store,
