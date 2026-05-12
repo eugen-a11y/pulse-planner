@@ -9,7 +9,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ChevronDown, ChevronRight, Plus, Tag as TagIcon } from "lucide-react-native";
 import type { Project } from "@pulse/core";
 import { useProjects } from "@/stores/projects";
 import { useDeps } from "@/wiring/depsContext";
@@ -38,6 +39,7 @@ type Row =
 
 export function ProjectsScreen(): JSX.Element {
   const deps = useDeps();
+  const router = useRouter();
   const byId = useProjects((s) => s.byId);
   const order = useProjects((s) => s.order);
   const create = useProjects((s) => s.create);
@@ -134,6 +136,13 @@ export function ProjectsScreen(): JSX.Element {
       <View className="flex-row items-center px-4 py-3 border-b border-gray-200 gap-3">
         <Text className="text-xl font-semibold text-ink flex-1">Projekte</Text>
         <SyncStatusPill />
+        <Pressable
+          hitSlop={8}
+          onPress={() => router.push("/tags" as never)}
+          accessibilityLabel="Tags verwalten"
+        >
+          <TagIcon color="#475569" size={20} />
+        </Pressable>
         <Pressable hitSlop={8} onPress={onAddPress} accessibilityLabel="Neues Projekt">
           <Plus color="#2563EB" size={22} />
         </Pressable>

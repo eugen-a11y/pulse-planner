@@ -26,6 +26,13 @@ interface TagsState {
   tagsForTask: Record<string, string[]>;
   refresh: () => Promise<void>;
   create: (input: { name: string; color?: string }) => Promise<Tag>;
+  /**
+   * Update a tag's mutable fields (name / color). Desktop has no tags.update
+   * IPC handler today; the mobile store implements it directly to back the
+   * Task 15 "Umbenennen / Farbe ändern" affordance. Outbox payload mirrors
+   * `projects.update` shape: { name?, color?, updatedAt }.
+   */
+  update: (id: string, fields: Partial<Pick<Tag, "name" | "color">>) => Promise<void>;
   remove: (id: string) => Promise<void>;
   attach: (taskId: string, tagId: string) => Promise<void>;
   detach: (taskId: string, tagId: string) => Promise<void>;
@@ -65,6 +72,25 @@ export const useTags = create<TagsState>((set, get) => ({
     });
     await get().refresh();
     return tag;
+  },
+
+  async update(id, fields) {
+    const d = deps();
+    const userId = requireUserId();
+    const local = await d.store.findById<Tag>("tags", id);
+    if (!local || local.userId !== userId) throw new Error("tag not found");
+    const ts = nowIso();
+    const updated: Tag = { ...local, ...fields, updatedAt: ts };
+    await d.store.upsert("tags", updated);
+    const { name, color } = fields;
+    const changed: Record<string, unknown> = { updatedAt: ts };
+    if (name !== undefined) changed.name = name;
+    if (color !== undefined) changed.color = color;
+    await d.outbox.enqueue({
+      entityTable: "tags", entityId: id, op: "update",
+      changedFields: changed, clientTs: ts,
+    });
+    await get().refresh();
   },
 
   async remove(id) {

@@ -153,6 +153,8 @@ export default function RootLayout() {
         <Stack.Screen name="auth" />
         <Stack.Screen name="project/[id]" />
         <Stack.Screen name="task/[id]" />
+        <Stack.Screen name="tags/index" />
+        <Stack.Screen name="tags/[id]" />
       </Stack>
     </DepsProvider>
   );
