@@ -14,6 +14,7 @@ import { useDeps } from "@/wiring/depsContext";
 import { TaskRow } from "@/components/TaskRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
 import { ProjectPickerSheet } from "@/components/ProjectPickerSheet";
+import { QuickAddSheet } from "@/components/QuickAddSheet";
 
 /**
  * Inbox screen. Mirrors apps/desktop/src/renderer/inbox/InboxView.tsx in shape
@@ -36,6 +37,7 @@ export function InboxScreen(): JSX.Element {
   const update = useTasks((s) => s.update);
   const [refreshing, setRefreshing] = useState(false);
   const [movingId, setMovingId] = useState<string | null>(null);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   useEffect(() => {
     void useTasks.getState().refreshInbox();
@@ -85,10 +87,8 @@ export function InboxScreen(): JSX.Element {
         <SyncStatusPill />
         <Pressable
           hitSlop={8}
-          onPress={() => {
-            // TODO: QuickAddSheet (Task 17)
-            console.log("TODO: QuickAddSheet");
-          }}
+          onPress={() => setQuickAddOpen(true)}
+          accessibilityLabel="Quick-Add"
         >
           <Plus color="#2563EB" size={22} />
         </Pressable>
@@ -139,6 +139,12 @@ export function InboxScreen(): JSX.Element {
         visible={movingId !== null}
         onPick={onMove}
         onClose={() => setMovingId(null)}
+      />
+
+      <QuickAddSheet
+        visible={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        defaultProjectId={null}
       />
     </View>
   );

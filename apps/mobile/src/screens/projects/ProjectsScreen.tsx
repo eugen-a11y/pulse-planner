@@ -10,12 +10,13 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronDown, ChevronRight, Plus, Search, Tag as TagIcon } from "lucide-react-native";
+import { ChevronDown, ChevronRight, Plus, Search, Tag as TagIcon, Zap } from "lucide-react-native";
 import type { Project } from "@pulse/core";
 import { useProjects } from "@/stores/projects";
 import { useDeps } from "@/wiring/depsContext";
 import { ProjectRow } from "@/components/ProjectRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
+import { QuickAddSheet } from "@/components/QuickAddSheet";
 
 /**
  * Projects list screen. Two collapsible sections:
@@ -48,6 +49,7 @@ export function ProjectsScreen(): JSX.Element {
   const [refreshing, setRefreshing] = useState(false);
   const [activeOpen, setActiveOpen] = useState(true);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   useEffect(() => {
     void useProjects.getState().refresh();
@@ -150,6 +152,13 @@ export function ProjectsScreen(): JSX.Element {
         >
           <Search color="#475569" size={20} />
         </Pressable>
+        <Pressable
+          hitSlop={8}
+          onPress={() => setQuickAddOpen(true)}
+          accessibilityLabel="Quick-Add"
+        >
+          <Zap color="#2563EB" size={20} />
+        </Pressable>
         <Pressable hitSlop={8} onPress={onAddPress} accessibilityLabel="Neues Projekt">
           <Plus color="#2563EB" size={22} />
         </Pressable>
@@ -200,6 +209,12 @@ export function ProjectsScreen(): JSX.Element {
             </Text>
           </View>
         }
+      />
+
+      <QuickAddSheet
+        visible={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        defaultProjectId={null}
       />
     </View>
   );

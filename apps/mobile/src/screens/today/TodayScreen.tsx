@@ -15,6 +15,7 @@ import { useTasks } from "@/stores/tasks";
 import { useDeps } from "@/wiring/depsContext";
 import { TaskRow } from "@/components/TaskRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
+import { QuickAddSheet } from "@/components/QuickAddSheet";
 
 /**
  * Today screen. Mirrors apps/desktop/src/renderer/today/TodayView.tsx structure:
@@ -36,6 +37,7 @@ export function TodayScreen(): JSX.Element {
   const ids = useTasks((s) => s.todayIds);
   const byId = useTasks((s) => s.byId);
   const [refreshing, setRefreshing] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   useEffect(() => {
     void useTasks.getState().refreshToday();
@@ -89,10 +91,8 @@ export function TodayScreen(): JSX.Element {
         <SyncStatusPill />
         <Pressable
           hitSlop={8}
-          onPress={() => {
-            // TODO: QuickAddSheet (Task 17)
-            console.log("TODO: QuickAddSheet");
-          }}
+          onPress={() => setQuickAddOpen(true)}
+          accessibilityLabel="Quick-Add"
         >
           <Plus color="#2563EB" size={22} />
         </Pressable>
@@ -138,6 +138,12 @@ export function TodayScreen(): JSX.Element {
           }
         />
       )}
+
+      <QuickAddSheet
+        visible={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        defaultProjectId={null}
+      />
     </View>
   );
 }
