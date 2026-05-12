@@ -1,5 +1,5 @@
-import { EmptyState } from "@/components/EmptyState";
+import { SettingsScreen } from "@/screens/settings/SettingsScreen";
 
 export default function SettingsRoute(): JSX.Element {
-  return <EmptyState title="Settings" subtitle="Wird in Task 18 implementiert." />;
+  return <SettingsScreen />;
 }
