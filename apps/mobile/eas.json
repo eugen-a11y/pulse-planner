@@ -1,5 +1,5 @@
 {
-  "cli": { "version": ">= 13.0.0", "appVersionSource": "remote" },
+  "cli": { "version": ">= 13.0.0", "appVersionSource": "local" },
   "build": {
     "development": {
       "developmentClient": true,
@@ -11,7 +11,7 @@
       "ios": { "simulator": false }
     },
     "production": {
-      "ios": { "autoIncrement": "buildNumber" }
+      "ios": { "simulator": false }
     }
   },
   "submit": {
