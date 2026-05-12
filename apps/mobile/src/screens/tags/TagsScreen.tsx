@@ -16,6 +16,7 @@ import { useTags } from "@/stores/tags";
 import { useDeps } from "@/wiring/depsContext";
 import { TagRow } from "@/components/TagRow";
 import { ColorSwatchPopover, PROJECT_COLORS } from "@/components/ColorSwatchPopover";
+import { refreshAll } from "@/stores/refresh-all";
 
 /**
  * Cross-project Tags screen (Task 15, Step 1+2). Mirrors the desktop

@@ -16,6 +16,7 @@ import { SyncStatusPill } from "@/components/SyncStatusPill";
 import { ProjectPickerSheet } from "@/components/ProjectPickerSheet";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
 import { TaskFAB } from "@/components/TaskFAB";
+import { refreshAll } from "@/stores/refresh-all";
 
 /**
  * Inbox screen. Mirrors apps/desktop/src/renderer/inbox/InboxView.tsx in shape
@@ -59,11 +60,11 @@ export function InboxScreen(): JSX.Element {
     setRefreshing(true);
     try {
       if (deps.engine) await deps.engine.pull();
-      await useTasks.getState().refreshInbox();
+      await refreshAll(deps);
     } finally {
       setRefreshing(false);
     }
-  }, [deps.engine]);
+  }, [deps]);
 
   const onMove = useCallback(
     async (projectId: string) => {

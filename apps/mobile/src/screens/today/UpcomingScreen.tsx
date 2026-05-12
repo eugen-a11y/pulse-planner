@@ -15,6 +15,7 @@ import { useTasks } from "@/stores/tasks";
 import { useDeps } from "@/wiring/depsContext";
 import { TaskRow } from "@/components/TaskRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
+import { refreshAll } from "@/stores/refresh-all";
 
 /**
  * Upcoming screen. Mirrors apps/desktop/src/renderer/today/UpcomingView.tsx

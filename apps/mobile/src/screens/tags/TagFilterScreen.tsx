@@ -14,6 +14,7 @@ import { useTags } from "@/stores/tags";
 import { useTasks } from "@/stores/tasks";
 import { useDeps } from "@/wiring/depsContext";
 import { TaskRow } from "@/components/TaskRow";
+import { refreshAll } from "@/stores/refresh-all";
 
 /**
  * Cross-project filtered task list for a single tag (Task 15, Step 1 follow-up).

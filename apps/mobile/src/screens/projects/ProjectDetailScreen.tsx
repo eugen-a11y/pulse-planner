@@ -23,6 +23,7 @@ import { DueDatePicker } from "@/components/DueDatePicker";
 import { MarkdownView } from "@/components/MarkdownView";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
 import { TaskFAB } from "@/components/TaskFAB";
+import { refreshAll } from "@/stores/refresh-all";
 
 /**
  * Project detail screen. Mirrors `apps/desktop/src/renderer/project/ProjectView.tsx`
@@ -295,11 +296,12 @@ function ProjectTasksTab({ projectId }: { projectId: string }): JSX.Element {
     setRefreshing(true);
     try {
       if (deps.engine) await deps.engine.pull();
+      await refreshAll(deps);
       await useTasks.getState().refreshProject(projectId);
     } finally {
       setRefreshing(false);
     }
-  }, [deps.engine, projectId]);
+  }, [deps, projectId]);
 
   if (tasks.length === 0) {
     return (
@@ -372,11 +374,12 @@ function ProjectNotesTab({ projectId }: { projectId: string }): JSX.Element {
     setRefreshing(true);
     try {
       if (deps.engine) await deps.engine.pull();
+      await refreshAll(deps);
       await load();
     } finally {
       setRefreshing(false);
     }
-  }, [deps.engine, load]);
+  }, [deps, load]);
 
   async function saveExisting(note: Note): Promise<void> {
     const userId = deps.userId;

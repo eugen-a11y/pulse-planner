@@ -17,6 +17,7 @@ import { TaskRow } from "@/components/TaskRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
 import { TaskFAB } from "@/components/TaskFAB";
+import { refreshAll } from "@/stores/refresh-all";
 
 /**
  * Today screen. Mirrors apps/desktop/src/renderer/today/TodayView.tsx structure:
@@ -76,11 +77,11 @@ export function TodayScreen(): JSX.Element {
     setRefreshing(true);
     try {
       if (deps.engine) await deps.engine.pull();
-      await useTasks.getState().refreshToday();
+      await refreshAll(deps);
     } finally {
       setRefreshing(false);
     }
-  }, [deps.engine]);
+  }, [deps]);
 
   const weekday = format(new Date(), "EEEE", { locale: de });
   const isEmpty = overdue.length === 0 && today.length === 0;

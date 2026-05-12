@@ -18,6 +18,7 @@ import { ProjectRow } from "@/components/ProjectRow";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
 import { TaskFAB } from "@/components/TaskFAB";
+import { refreshAll } from "@/stores/refresh-all";
 
 /**
  * Projects list screen. Two collapsible sections:
@@ -81,11 +82,11 @@ export function ProjectsScreen(): JSX.Element {
     setRefreshing(true);
     try {
       if (deps.engine) await deps.engine.pull();
-      await useProjects.getState().refresh();
+      await refreshAll(deps);
     } finally {
       setRefreshing(false);
     }
-  }, [deps.engine]);
+  }, [deps]);
 
   const onLongPress = useCallback(
     (p: Project) => {
