@@ -17,8 +17,8 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "PLACEHOLDER_APPLE_ID_EMAIL",
-        "ascAppId": "PLACEHOLDER_APP_STORE_CONNECT_APP_ID",
+        "appleId": "eugen@reinfeld.me",
+        "ascAppId": "6768802840",
         "appleTeamId": "67YNFPW8Q3"
       }
     }
