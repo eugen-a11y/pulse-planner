@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { rrulestr } from "rrule";
 import { makeTask, nowIso, type Task } from "@pulse/core";
 import type { MobileDeps } from "@/wiring/deps";
+import { reconcileNotificationsDebounced } from "@/notifications";
 
 /**
  * Mobile tasks store. Mirrors `apps/desktop/src/renderer/stores/tasks.ts`
@@ -80,6 +81,7 @@ export const useTasks = create<TasksState>((set, get) => ({
       todayIds: list.map((t) => t.id),
       loaded: true,
     }));
+    reconcileNotificationsDebounced();
   },
 
   async refreshUpcoming() {
@@ -99,6 +101,7 @@ export const useTasks = create<TasksState>((set, get) => ({
       upcomingIds: list.map((t) => t.id),
       loaded: true,
     }));
+    reconcileNotificationsDebounced();
   },
 
   async refreshInbox() {
@@ -111,6 +114,7 @@ export const useTasks = create<TasksState>((set, get) => ({
       inboxIds: list.map((t) => t.id),
       loaded: true,
     }));
+    reconcileNotificationsDebounced();
   },
 
   async refreshProject(projectId) {
@@ -123,6 +127,7 @@ export const useTasks = create<TasksState>((set, get) => ({
       byProject: { ...s.byProject, [projectId]: list.map((t) => t.id) },
       loaded: true,
     }));
+    reconcileNotificationsDebounced();
   },
 
   async create(input) {

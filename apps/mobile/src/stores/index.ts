@@ -4,6 +4,7 @@ import * as projects from "./projects";
 import * as tasks from "./tasks";
 import * as tags from "./tags";
 import * as sync from "./sync";
+import { bindNotificationDeps } from "@/notifications";
 
 export { useAuth } from "./auth";
 export { useProjects } from "./projects";
@@ -24,4 +25,5 @@ export function bindStoresToDeps(deps: MobileDeps): void {
   tasks.bindDeps(deps);
   tags.bindDeps(deps);
   sync.bindDeps(deps);
+  bindNotificationDeps(deps);
 }

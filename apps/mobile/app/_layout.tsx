@@ -6,6 +6,14 @@ import * as Linking from "expo-linking";
 import { buildDeps, type MobileDeps } from "@/wiring/deps";
 import { DepsProvider } from "@/wiring/depsContext";
 import { bindStoresToDeps, refreshAll, useAuth, patchStatus } from "@/stores";
+import { reconcileNotifications } from "@/notifications";
+import {
+  drainPendingActions,
+  ensureNotificationCategoryRegistered,
+  registerResponseListener,
+  replayLastNotificationResponse,
+  requestPermissions as requestNotificationPermissions,
+} from "@/platform/ExpoNotifications";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -41,8 +49,32 @@ export default function RootLayout() {
       await useAuth.getState().restore();
       setDeps(d);
       await SplashScreen.hideAsync();
+      // Notifications boot: register category, request permission, replay
+      // any cold-start tap, drain queued actions. All best-effort.
+      try {
+        await ensureNotificationCategoryRegistered();
+        await requestNotificationPermissions();
+        await replayLastNotificationResponse(d, (taskId) => {
+          router.push(`/task/${taskId}` as never);
+        });
+        await drainPendingActions(d, (taskId) => {
+          router.push(`/task/${taskId}` as never);
+        });
+      } catch {
+        // Best-effort — never block boot on notification wiring.
+      }
     })();
   }, []);
+
+  // Register the notification response listener once deps are bound.
+  useEffect(() => {
+    if (!deps) return;
+    const unsub = registerResponseListener(
+      () => deps,
+      (taskId) => { router.push(`/task/${taskId}` as never); },
+    );
+    return () => { unsub(); };
+  }, [deps, router]);
 
   // Sync lifecycle wiring. Mirrors `apps/desktop/src/main/ipc.ts` 30-72:
   // realtime sub with 500ms debounce → refreshAll, 60s backstop.
@@ -55,6 +87,7 @@ export default function RootLayout() {
         await deps!.engine.pull();
         await refreshAll(deps!);
         await patchStatus({ lastPullAt: new Date().toISOString(), lastError: null });
+        void reconcileNotifications();
       } catch (e) {
         const msg = (e as Error).message;
         if (/401|unauthor|jwt/i.test(msg)) {
@@ -90,6 +123,7 @@ export default function RootLayout() {
     function onAppStateChange(state: AppStateStatus): void {
       if (state === "active") {
         startBackgroundSync();
+        void reconcileNotifications();
       } else if (state === "background" || state === "inactive") {
         stopBackgroundSync();
       }

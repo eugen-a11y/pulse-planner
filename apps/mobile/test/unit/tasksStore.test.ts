@@ -11,12 +11,13 @@
  * null since `complete` doesn't touch the engine.
  */
 
-import { describe, expect, it, beforeEach } from "@jest/globals";
+import { describe, expect, it, beforeEach, afterAll } from "@jest/globals";
 import { openDatabaseAsync } from "expo-sqlite";
 import { openExpoSqliteStore } from "../../src/platform/ExpoSqliteStore";
 import { useTasks, bindDeps } from "../../src/stores/tasks";
 import { makeTask, Outbox } from "@pulse/core";
 import type { MobileDeps } from "../../src/wiring/deps";
+import { clearReconcileDebounce } from "../../src/notifications";
 
 async function buildFakeDeps(): Promise<MobileDeps> {
   const db = await openDatabaseAsync(":memory:");
@@ -42,6 +43,12 @@ describe("tasks store · complete()", () => {
     useTasks.setState({
       byId: {}, todayIds: [], upcomingIds: [], inboxIds: [], byProject: {}, loaded: false,
     });
+  });
+
+  afterAll(() => {
+    // The store schedules a debounced notification reconcile on every refresh.
+    // Clear the pending timer so Jest's worker can exit cleanly.
+    clearReconcileDebounce();
   });
 
   it("spawns a child task for an RRULE-bearing parent", async () => {

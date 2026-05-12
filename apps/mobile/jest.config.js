@@ -29,6 +29,7 @@ module.exports = {
     "^expo-sqlite$": "<rootDir>/test/__mocks__/expo-sqlite",
     "^expo-secure-store$": "<rootDir>/test/__mocks__/expo-secure-store",
     "^expo-constants$": "<rootDir>/test/__mocks__/expo-constants",
+    "^expo-notifications$": "<rootDir>/test/__mocks__/expo-notifications",
     "^react-native-mmkv$": "<rootDir>/test/__mocks__/react-native-mmkv",
     "^@supabase/supabase-js$": "<rootDir>/test/__mocks__/@supabase/supabase-js",
     // Point to the TypeScript source so ts-jest can transform it (dist is ESM-only)
