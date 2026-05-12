@@ -4,6 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "Pulse",
   slug: "pulse-planner",
+  owner: "deathrage94s-organization",
   scheme: "pulse",
   version: "0.1.0",
   orientation: "portrait",
@@ -31,13 +32,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "@bacons/apple-targets",
       {
-        appleTeamId: "PLACEHOLDER_APPLE_TEAM_ID",
+        appleTeamId: "67YNFPW8Q3",
         targets: ["./targets/TodayWidget"]
       }
     ]
   ],
   extra: {
-    eas: { projectId: "PLACEHOLDER_EAS_PROJECT_ID" },
+    eas: { projectId: "bad410c4-bd22-49c4-86c8-bc027c7b876d" },
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
   }
