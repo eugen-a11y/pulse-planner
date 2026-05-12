@@ -73,7 +73,13 @@ export async function scheduleNotification(spec: TaskNotificationSpec): Promise<
       data: { taskId: spec.taskId },
       categoryIdentifier: TASK_DUE_CATEGORY,
     },
-    trigger: { date: fireDate } as Notifications.DateTriggerInput,
+    // SDK 52 / expo-notifications 0.29 requires explicit `type`. Without it
+    // expo falls back to an immediate trigger, which is why every scheduled
+    // notification was firing right away regardless of dueDate.
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: fireDate,
+    },
   });
 }
 

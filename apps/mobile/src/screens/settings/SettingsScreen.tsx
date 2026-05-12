@@ -127,14 +127,15 @@ export function SettingsScreen(): JSX.Element {
     );
   }, [router]);
 
-  const onToggleFaceId = useCallback(
-    (next: boolean) => {
-      if (!faceIdAvailable && next) return;
-      setFaceIdEnabled(next);
-      setFaceIdOn(next);
-    },
-    [faceIdAvailable],
-  );
+  const onToggleFaceId = useCallback((next: boolean) => {
+    // Don't gate on faceIdAvailable: hasHardwareAsync/isEnrolledAsync can
+    // misreport (especially on first launch before the user has granted any
+    // bio access). If hardware really is missing, LocalAuthentication's own
+    // prompt at unlock time will fail gracefully — better UX than a stuck
+    // disabled toggle.
+    setFaceIdEnabled(next);
+    setFaceIdOn(next);
+  }, []);
 
   const onToggleNotif = useCallback(async (next: boolean) => {
     if (!next) {
@@ -211,10 +212,6 @@ export function SettingsScreen(): JSX.Element {
       <SectionHeader title="Konto" />
       <Card>
         <Row label="E-Mail" value={email} />
-        <Divider />
-        <Pressable onPress={onLogout} className="px-4 py-3" accessibilityRole="button">
-          <Text className="text-red-600 text-base">Abmelden</Text>
-        </Pressable>
       </Card>
 
       {/* Sync */}
@@ -265,9 +262,8 @@ export function SettingsScreen(): JSX.Element {
             ) : null}
           </View>
           <Switch
-            value={faceIdOn && faceIdAvailable}
+            value={faceIdOn}
             onValueChange={onToggleFaceId}
-            disabled={!faceIdAvailable}
           />
         </View>
       </Card>
@@ -312,6 +308,14 @@ export function SettingsScreen(): JSX.Element {
         >
           <Text className="text-pulse text-base">Log exportieren</Text>
           {exporting ? <ActivityIndicator color="#2563EB" /> : null}
+        </Pressable>
+      </Card>
+
+      {/* Logout pinned to the bottom — destructive action below everything. */}
+      <View className="h-8" />
+      <Card>
+        <Pressable onPress={onLogout} className="px-4 py-3" accessibilityRole="button">
+          <Text className="text-red-600 text-base">Abmelden</Text>
         </Pressable>
       </Card>
 

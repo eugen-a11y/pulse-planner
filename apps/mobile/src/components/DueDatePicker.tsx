@@ -97,8 +97,10 @@ export function DueDatePicker({
             <View className="px-4 pb-2">
               <DateTimePicker
                 value={value ? new Date(value) : new Date()}
-                mode="date"
+                mode="datetime"
                 display={Platform.OS === "ios" ? "spinner" : "default"}
+                themeVariant="light"
+                textColor="#0F172A"
                 onChange={onNativeChange}
               />
             </View>
