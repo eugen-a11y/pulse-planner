@@ -19,6 +19,7 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { Platform } from "react-native";
 import { useAuth, useSync, manualPull } from "@/stores";
+import { ChevronRight } from "lucide-react-native";
 import { useDeps } from "@/wiring/depsContext";
 import { getFaceIdEnabled, setFaceIdEnabled } from "@/lib/prefs";
 import { readDebugLog } from "@/lib/debugLog";
@@ -235,6 +236,22 @@ export function SettingsScreen(): JSX.Element {
             <Text className="text-xs text-red-600">{status.lastError}</Text>
           </View>
         ) : null}
+        <Divider />
+        <Pressable
+          onPress={() => { router.push("/settings/dlq" as never); }}
+          className="px-4 py-3 flex-row items-center justify-between"
+          accessibilityRole="button"
+        >
+          <Text className="text-base text-ink">Fehlgeschlagene Sync-Items</Text>
+          <View className="flex-row items-center">
+            {status.outboxSize > 0 ? (
+              <View className="bg-red-100 rounded-full px-2 py-0.5 mr-2">
+                <Text className="text-xs font-medium text-red-700">{status.outboxSize}</Text>
+              </View>
+            ) : null}
+            <ChevronRight size={18} color="#9ca3af" />
+          </View>
+        </Pressable>
       </Card>
 
       {/* Sicherheit */}

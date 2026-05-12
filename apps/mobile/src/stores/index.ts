@@ -11,7 +11,15 @@ export { useProjects } from "./projects";
 export { useTasks } from "./tasks";
 export { useTags } from "./tags";
 export { useUi, type ViewKey } from "./ui";
-export { useSync, manualPull, manualPush, patchStatus, type SyncStatus } from "./sync";
+export {
+  useSync,
+  manualPull,
+  manualPush,
+  patchStatus,
+  setSyncState,
+  type SyncStatus,
+  type SyncLifecycleState,
+} from "./sync";
 export { refreshAll } from "./refresh-all";
 
 /**

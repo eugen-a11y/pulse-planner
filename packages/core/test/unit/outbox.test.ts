@@ -35,6 +35,19 @@ describe("Outbox", () => {
     expect(retry!.lastError).toBe("network error");
   });
 
+  it("discard removes the entry without ack semantics", async () => {
+    const ob = new Outbox();
+    await ob.enqueue(entry("a"));
+    // Stagger to avoid identical queuedAt timestamps on fast machines.
+    await new Promise((r) => setTimeout(r, 2));
+    await ob.enqueue(entry("b"));
+    const all = await ob.peekAll();
+    expect(all.length).toBe(2);
+    await ob.discard(all[0]!.queuedAt);
+    const remaining = await ob.peekAll();
+    expect(remaining.map((e) => e.entityId)).toEqual(["b"]);
+  });
+
   it("backoffMs grows exponentially capped at 5 minutes", () => {
     expect(Outbox.backoffMs(0)).toBe(0);
     expect(Outbox.backoffMs(1)).toBe(1_000);

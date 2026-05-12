@@ -36,6 +36,17 @@ export class Outbox {
     e.lastError = error;
   }
 
+  /**
+   * Drop an entry from the queue without recording success. Used by the
+   * mobile DLQ screen when the user chooses "Verwerfen" on a stuck entry.
+   * Semantically identical to `ack` (both remove by queuedAt), but kept as a
+   * distinct method so callers/intent are clear and so a future persistent
+   * Outbox can record discard-vs-ack metrics separately.
+   */
+  async discard(queuedAt: string): Promise<void> {
+    this.q = this.q.filter((e) => e.queuedAt !== queuedAt);
+  }
+
   static backoffMs(attempts: number): number {
     if (attempts <= 0) return 0;
     return Math.min(2 ** (attempts - 1) * 1_000, 300_000);

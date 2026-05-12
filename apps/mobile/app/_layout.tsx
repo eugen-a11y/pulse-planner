@@ -1,11 +1,11 @@
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { AppState, type AppStateStatus } from "react-native";
+import { Alert, AppState, type AppStateStatus } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import * as Linking from "expo-linking";
 import { buildDeps, type MobileDeps } from "@/wiring/deps";
 import { DepsProvider } from "@/wiring/depsContext";
-import { bindStoresToDeps, refreshAll, useAuth, patchStatus } from "@/stores";
+import { bindStoresToDeps, refreshAll, useAuth, patchStatus, setSyncState } from "@/stores";
 import { reconcileNotifications } from "@/notifications";
 import { emitWidgetSnapshotFor } from "@/stores/tasks";
 import {
@@ -93,10 +93,12 @@ export default function RootLayout() {
 
     async function pullAndRefresh(): Promise<void> {
       if (!deps!.engine) return;
+      setSyncState("syncing");
       try {
         await deps!.engine.pull();
         await refreshAll(deps!);
         await patchStatus({ lastPullAt: new Date().toISOString(), lastError: null });
+        setSyncState("idle");
         void reconcileNotifications();
         // Widget snapshot — best-effort, never blocks the pull loop. The
         // `refreshAll` above just refreshed `useTasks` so `refreshToday()`
@@ -106,12 +108,43 @@ export default function RootLayout() {
       } catch (e) {
         const msg = (e as Error).message;
         if (/401|unauthor|jwt/i.test(msg)) {
+          // Task 22: try a silent refresh before signing the user out. The
+          // AuthService.restoreSession() reads the persisted refresh token
+          // and calls supabase.auth.refreshSession; on success we re-bind
+          // the user id and retry the pull once. On any failure → sign out
+          // + redirect with a user-visible toast.
+          try {
+            const refreshed = await deps!.auth.restoreSession();
+            if (refreshed) {
+              deps!.setUserId(refreshed.user.id);
+              useAuth.setState({ session: refreshed });
+              // Retry the pull exactly once. If it fails again, we'll fall
+              // through to the patchStatus error path below — no infinite
+              // loop because we only retry on the first 401 in this call.
+              try {
+                await deps!.engine!.pull();
+                await refreshAll(deps!);
+                await patchStatus({ lastPullAt: new Date().toISOString(), lastError: null });
+                setSyncState("idle");
+                return;
+              } catch (retryErr) {
+                await patchStatus({ lastError: (retryErr as Error).message });
+                setSyncState("error");
+                return;
+              }
+            }
+          } catch {
+            // fall through to sign-out
+          }
+          Alert.alert("Sitzung abgelaufen", "Bitte erneut anmelden.");
           await useAuth.getState().signOut();
           stopBackgroundSync();
+          setSyncState("idle");
           router.replace("/auth/login");
           return;
         }
         await patchStatus({ lastError: msg });
+        setSyncState("error");
       }
     }
 
@@ -205,6 +238,7 @@ export default function RootLayout() {
         <Stack.Screen name="tags/index" />
         <Stack.Screen name="tags/[id]" />
         <Stack.Screen name="search" />
+        <Stack.Screen name="settings/dlq" />
       </Stack>
     </DepsProvider>
   );
