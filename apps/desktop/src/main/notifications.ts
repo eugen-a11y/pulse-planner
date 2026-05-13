@@ -20,8 +20,13 @@ export class NotificationScheduler {
       if (task.status === "done") continue;
       if (task.deletedAt) continue;
       if (!task.dueDate) continue;
+      // Mirror mobile: a task only gets a notification when an explicit
+      // reminderOffsetMinutes is set. null means "no reminder" — silent.
+      if (task.reminderOffsetMinutes === null || task.reminderOffsetMinutes === undefined) continue;
       const dueMs = new Date(task.dueDate).getTime();
-      const delta = dueMs - now;
+      if (!Number.isFinite(dueMs)) continue;
+      const fireMs = dueMs - task.reminderOffsetMinutes * 60_000;
+      const delta = fireMs - now;
       if (delta < -MISSED_TOLERANCE_MS) continue;
       if (delta > HORIZON_MS) continue;
       const delay = Math.max(0, delta);
