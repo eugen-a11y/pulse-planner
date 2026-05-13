@@ -49,6 +49,7 @@ export function SettingsScreen(): JSX.Element {
   const [pulling, setPulling] = useState(false);
   const [notifStatus, setNotifStatus] = useState<NotifStatus>("undetermined");
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -177,6 +178,64 @@ export function SettingsScreen(): JSX.Element {
     }
   }, [deps, exporting, status.lastError, status.lastPullAt, status.lastPushAt, status.outboxSize]);
 
+  const onDeleteAccount = useCallback(() => {
+    // Two-stage confirm: irreversible action with server-side cascade.
+    Alert.alert(
+      "Konto löschen?",
+      "Alle deine Projekte, Aufgaben, Tags und Kommentare werden unwiederbringlich aus der Cloud gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+      [
+        { text: "Abbrechen", style: "cancel" },
+        {
+          text: "Weiter",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "Wirklich endgültig löschen?",
+              "Letzte Bestätigung. Danach ist dein Konto weg.",
+              [
+                { text: "Abbrechen", style: "cancel" },
+                {
+                  text: "Endgültig löschen",
+                  style: "destructive",
+                  onPress: async () => {
+                    if (deleting) return;
+                    setDeleting(true);
+                    try {
+                      const { error } = await deps.supabase.rpc("delete_account");
+                      if (error) throw new Error(error.message);
+                      try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch { /* ignore */ }
+                      // Wipe local SQLite so a different account on the same device
+                      // starts clean. sync_state included so next signIn pulls from 0.
+                      try {
+                        await deps.db.execAsync(`
+                          DELETE FROM task_tags;
+                          DELETE FROM comments;
+                          DELETE FROM notes;
+                          DELETE FROM time_entries;
+                          DELETE FROM attachments;
+                          DELETE FROM tasks;
+                          DELETE FROM projects;
+                          DELETE FROM tags;
+                          DELETE FROM sync_state;
+                        `);
+                      } catch { /* ignore — best-effort local wipe */ }
+                      try { await useAuth.getState().signOut(); } catch { /* ignore */ }
+                      router.replace("/auth/login");
+                    } catch (e) {
+                      Alert.alert("Fehler", (e as Error).message);
+                    } finally {
+                      setDeleting(false);
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
+  }, [deps, deleting, router]);
+
   return (
     <ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ padding: 16 }}>
       <Text className="text-2xl font-semibold text-ink mb-4">Einstellungen</Text>
@@ -272,6 +331,19 @@ export function SettingsScreen(): JSX.Element {
       <Card>
         <Pressable onPress={onLogout} className="px-4 py-3" accessibilityRole="button">
           <Text className="text-red-600 text-base">Abmelden</Text>
+        </Pressable>
+      </Card>
+
+      <View className="h-3" />
+      <Card>
+        <Pressable
+          onPress={onDeleteAccount}
+          disabled={deleting}
+          className="px-4 py-3 flex-row items-center justify-between"
+          accessibilityRole="button"
+        >
+          <Text className="text-red-600 text-base">Konto löschen</Text>
+          {deleting ? <ActivityIndicator color="#dc2626" /> : null}
         </Pressable>
       </Card>
 

@@ -23,5 +23,5 @@ nsis:
   artifactName: Pulse-Setup-${version}.${ext}
 publish:
   provider: github
-  owner: PLACEHOLDER_GITHUB_OWNER
+  owner: eugen-a11y
   repo: pulse-planner
