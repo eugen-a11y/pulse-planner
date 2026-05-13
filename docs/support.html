@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pulse — Support</title>
+    <style>
+      :root { --pulse: #2563eb; --ink: #0f172a; --ink-muted: #64748b; --bg: #f8fafc; --card: #fff; --border: #e2e8f0; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.6; padding: 24px 16px; }
+      main { max-width: 760px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px 28px; }
+      h1 { color: var(--pulse); margin-top: 0; }
+      h2 { color: var(--ink); margin-top: 28px; font-size: 18px; }
+      a { color: var(--pulse); }
+      .contact { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 24px 0; }
+      .faq { margin-top: 20px; }
+      .faq dt { font-weight: 600; margin-top: 16px; color: var(--ink); }
+      .faq dd { margin-left: 0; color: var(--ink); }
+      .footer { text-align: center; margin-top: 24px; color: var(--ink-muted); font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Pulse Support</h1>
+      <p>Hilfe, Antworten auf häufige Fragen und Kontakt für Pulse Project Planner.</p>
+
+      <div class="contact">
+        <strong>Direkter Kontakt:</strong><br/>
+        E-Mail: <a href="mailto:eugen@reinfeld.me?subject=Pulse%20Support">eugen@reinfeld.me</a><br/>
+        Tel: <a href="tel:+494029896460">040 29896460</a><br/>
+        <span style="color: var(--ink-muted); font-size: 13px;">Antwort meist innerhalb von 24-48 Stunden.</span>
+      </div>
+
+      <h2>Erste Schritte</h2>
+      <ol>
+        <li>App öffnen und Konto erstellen (E-Mail + Passwort, mind. 8 Zeichen).</li>
+        <li>Erstes Projekt anlegen über das „+"-Symbol in der Sidebar.</li>
+        <li>Aufgaben erstellen — entweder im Projekt oder in der „Inbox" für Notizen ohne Projektzuordnung.</li>
+        <li>Optional: Fälligkeitsdatum + Erinnerung setzen, damit du keine Aufgabe vergisst.</li>
+      </ol>
+
+      <h2>Häufige Fragen</h2>
+      <dl class="faq">
+        <dt>Wo werden meine Daten gespeichert?</dt>
+        <dd>Auf Servern in Frankfurt am Main (Supabase, DSGVO-konform). Lokal werden Daten zusätzlich offline-fähig auf deinem Gerät gehalten, sodass du auch ohne Internet weiterarbeiten kannst.</dd>
+
+        <dt>Funktioniert die App offline?</dt>
+        <dd>Ja. Pulse ist offline-first: alle Aktionen werden lokal gespeichert und beim nächsten Internetzugang synchronisiert.</dd>
+
+        <dt>Synchronisiert die App zwischen iPhone und Desktop?</dt>
+        <dd>Ja. Wenn du dich mit demselben Konto auf iOS und der Windows-Desktop-App anmeldest, werden Projekte, Aufgaben und alle weiteren Daten automatisch synchronisiert.</dd>
+
+        <dt>Wie setze ich mein Passwort zurück?</dt>
+        <dd>Auf dem Login-Bildschirm „Passwort vergessen?" antippen, E-Mail eingeben, im erhaltenen Link das neue Passwort vergeben und dich anschließend neu anmelden.</dd>
+
+        <dt>Wie lösche ich mein Konto?</dt>
+        <dd>In der App: Einstellungen → ganz unten „Konto löschen". Nach zweifacher Bestätigung wird dein Konto inklusive aller Daten unwiderruflich gelöscht.</dd>
+
+        <dt>Erinnerungen kommen nicht an</dt>
+        <dd>Erlaube Benachrichtigungen in den iOS-Einstellungen unter Pulse → Mitteilungen. Stelle sicher, dass „Töne" und „Banner" aktiviert sind.</dd>
+
+        <dt>Sync hängt / Daten kommen nicht an</dt>
+        <dd>In der App unter Einstellungen → „Jetzt synchronisieren" tippen. Falls Fehler auftreten, schreib mir eine Mail mit dem exportierten Debug-Log (Einstellungen → Debug → „Log exportieren").</dd>
+      </dl>
+
+      <h2>Sicherheit & Datenschutz</h2>
+      <p>Pulse enthält kein Tracking, keine Werbung und keine Analytics. Details in der <a href="./privacy.html">Datenschutzerklärung</a>.</p>
+
+      <h2>Feedback & Feature-Requests</h2>
+      <p>Schreib mir per <a href="mailto:eugen@reinfeld.me?subject=Pulse%20Feedback">E-Mail</a>. Konstruktive Kritik und Vorschläge sind willkommen.</p>
+
+      <p class="footer"><a href="./privacy.html">Datenschutz</a> · <a href="./">Pulse</a></p>
+    </main>
+  </body>
+</html>
