@@ -39,22 +39,23 @@ export const TABLE_DDL: {
 CREATE INDEX IF NOT EXISTS projects_user_updated ON projects (user_id, updated_at);`,
 
   tasks: `CREATE TABLE IF NOT EXISTS tasks (
-  id                    TEXT PRIMARY KEY,
-  user_id               TEXT NOT NULL,
-  project_id            TEXT,
-  parent_task_id        TEXT,
-  title                 TEXT NOT NULL,
-  description           TEXT,
-  status                TEXT NOT NULL,
-  priority              INTEGER NOT NULL,
-  due_date              TEXT,
-  completed_at          TEXT,
-  sort_order            INTEGER NOT NULL,
-  recurrence_rule       TEXT,
-  recurrence_parent_id  TEXT,
-  created_at            TEXT NOT NULL,
-  updated_at            TEXT NOT NULL,
-  deleted_at            TEXT
+  id                       TEXT PRIMARY KEY,
+  user_id                  TEXT NOT NULL,
+  project_id               TEXT,
+  parent_task_id           TEXT,
+  title                    TEXT NOT NULL,
+  description              TEXT,
+  status                   TEXT NOT NULL,
+  priority                 INTEGER NOT NULL,
+  due_date                 TEXT,
+  completed_at             TEXT,
+  sort_order               INTEGER NOT NULL,
+  recurrence_rule          TEXT,
+  recurrence_parent_id     TEXT,
+  reminder_offset_minutes  INTEGER,
+  created_at               TEXT NOT NULL,
+  updated_at               TEXT NOT NULL,
+  deleted_at               TEXT
 );
 CREATE INDEX IF NOT EXISTS tasks_user_project ON tasks (user_id, project_id);
 CREATE INDEX IF NOT EXISTS tasks_user_due     ON tasks (user_id, due_date);

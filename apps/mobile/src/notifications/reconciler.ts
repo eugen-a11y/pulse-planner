@@ -32,6 +32,13 @@ export type ReconcilerTask = {
   dueDate: string | null;
   status: string;
   deletedAt: string | null;
+  /**
+   * Minutes before dueDate to fire the local notification.
+   *   null  → no reminder, skip scheduling entirely.
+   *   0     → fire exactly at dueDate.
+   *   N>0   → fire at dueDate − N minutes.
+   */
+  reminderOffsetMinutes: number | null;
 };
 
 export type ReconcileResult = {
@@ -50,22 +57,33 @@ export function reconcile(
 ): ReconcileResult {
   const maxScheduled = options?.maxScheduled ?? DEFAULT_MAX;
   const nowIso = now.toISOString();
+  const nowMs = now.getTime();
 
-  // 1) Filter to active, future-due tasks.
-  const active = tasks.filter((t) =>
-    t.status !== "done" &&
-    !t.deletedAt &&
-    t.dueDate !== null &&
-    t.dueDate > nowIso,
-  );
+  // Compute (fireAt = dueDate − reminderOffsetMinutes) per task. Tasks without
+  // a reminderOffsetMinutes get no scheduling slot. Filter to active +
+  // future fireAt (not future dueDate — a 1h reminder for a 30min-future task
+  // is already past).
+  type Enriched = { task: ReconcilerTask; fireAt: string };
+  const active: Enriched[] = [];
+  for (const t of tasks) {
+    if (t.status === "done") continue;
+    if (t.deletedAt) continue;
+    if (t.dueDate === null) continue;
+    if (t.reminderOffsetMinutes === null || t.reminderOffsetMinutes === undefined) continue;
+    const dueMs = Date.parse(t.dueDate);
+    if (!Number.isFinite(dueMs)) continue;
+    const fireMs = dueMs - t.reminderOffsetMinutes * 60_000;
+    if (fireMs <= nowMs) continue;
+    active.push({ task: t, fireAt: new Date(fireMs).toISOString() });
+  }
 
-  // 2) Sort by dueDate ascending.
-  active.sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : a.dueDate! > b.dueDate! ? 1 : 0));
+  // Sort by fireAt ascending (earliest fires first).
+  active.sort((a, b) => (a.fireAt < b.fireAt ? -1 : a.fireAt > b.fireAt ? 1 : 0));
 
-  // 3) Cap.
+  // Cap.
   const eligible = active.slice(0, maxScheduled);
-  const eligibleById = new Map<string, ReconcilerTask>();
-  for (const t of eligible) eligibleById.set(t.id, t);
+  const eligibleById = new Map<string, Enriched>();
+  for (const e of eligible) eligibleById.set(e.task.id, e);
 
   // 4) Index existing scheduled entries by taskId. Note: if there are
   //    duplicates (shouldn't normally happen, but defensively), keep them
@@ -82,9 +100,8 @@ export function reconcile(
   const toKeep: string[] = [];
 
   // Walk eligible tasks; classify.
-  for (const t of eligible) {
+  for (const { task: t, fireAt } of eligible) {
     const existing = scheduledByTask.get(t.id) ?? [];
-    const fireAt = t.dueDate as string;
     const match = existing.find((e) => e.fireAt === fireAt);
     if (match && existing.length === 1) {
       toKeep.push(t.id);

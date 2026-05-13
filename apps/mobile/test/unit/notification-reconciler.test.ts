@@ -19,6 +19,7 @@ import { reconcile, type ScheduledEntry } from "../../src/notifications/reconcil
 type Task = {
   id: string; title: string; dueDate: string | null;
   status: string; deletedAt: string | null;
+  reminderOffsetMinutes: number | null;
 };
 
 const now = new Date("2026-06-01T10:00:00Z");
@@ -30,27 +31,32 @@ function task(partial: Partial<Task> & { id: string }): Task {
     dueDate: partial.dueDate ?? null,
     status: partial.status ?? "todo",
     deletedAt: partial.deletedAt ?? null,
+    // Default to "fire exactly at dueDate" so existing assertions about
+    // fireAt matching dueDate stay correct. Use `in` to distinguish "no key"
+    // from "explicit null" — `?? 0` would coerce null back to 0.
+    reminderOffsetMinutes:
+      "reminderOffsetMinutes" in partial ? partial.reminderOffsetMinutes! : 0,
   };
 }
 
 describe("reconcile", () => {
   it("skips past-due tasks", () => {
     const past = task({ id: "t1", dueDate: "2026-05-30T09:00:00Z" });
-    const future = task({ id: "t2", dueDate: "2026-06-02T09:00:00Z" });
+    const future = task({ id: "t2", dueDate: "2026-06-02T09:00:00.000Z" });
     const out = reconcile([past, future], [], now);
     expect(out.toSchedule.map((s) => s.taskId)).toEqual(["t2"]);
     expect(out.toCancel).toEqual([]);
   });
 
   it("ignores done tasks", () => {
-    const t = task({ id: "t1", dueDate: "2026-06-02T09:00:00Z", status: "done" });
+    const t = task({ id: "t1", dueDate: "2026-06-02T09:00:00.000Z", status: "done" });
     const out = reconcile([t], [], now);
     expect(out.toSchedule).toEqual([]);
   });
 
   it("ignores deleted tasks", () => {
     const t = task({
-      id: "t1", dueDate: "2026-06-02T09:00:00Z",
+      id: "t1", dueDate: "2026-06-02T09:00:00.000Z",
       deletedAt: "2026-05-31T00:00:00Z",
     });
     const out = reconcile([t], [], now);
@@ -61,6 +67,72 @@ describe("reconcile", () => {
     const t = task({ id: "t1", dueDate: null });
     const out = reconcile([t], [], now);
     expect(out.toSchedule).toEqual([]);
+  });
+
+  it("ignores tasks with no reminder set", () => {
+    const t = task({
+      id: "t1",
+      dueDate: "2026-06-02T09:00:00.000Z",
+      reminderOffsetMinutes: null,
+    });
+    const out = reconcile([t], [], now);
+    expect(out.toSchedule).toEqual([]);
+  });
+
+  it("fires at dueDate - reminderOffsetMinutes", () => {
+    // 30-minute reminder, dueDate at 09:00 → fireAt at 08:30.
+    const t = task({
+      id: "t1",
+      dueDate: "2026-06-02T09:00:00.000Z",
+      reminderOffsetMinutes: 30,
+    });
+    const out = reconcile([t], [], now);
+    expect(out.toSchedule).toHaveLength(1);
+    expect(out.toSchedule[0].fireAt).toBe("2026-06-02T08:30:00.000Z");
+  });
+
+  it("skips when fireAt is already in the past (offset > time-until-due)", () => {
+    // dueDate 30min in the future, but reminder 60min before → fireAt 30min ago.
+    const dueMs = now.getTime() + 30 * 60_000;
+    const t = task({
+      id: "t1",
+      dueDate: new Date(dueMs).toISOString(),
+      reminderOffsetMinutes: 60,
+    });
+    const out = reconcile([t], [], now);
+    expect(out.toSchedule).toEqual([]);
+  });
+
+  it("re-fires (toKeep) when scheduled entry matches computed fireAt", () => {
+    const t = task({
+      id: "t1",
+      dueDate: "2026-06-02T09:00:00.000Z",
+      reminderOffsetMinutes: 15,
+    });
+    const out = reconcile(
+      [t],
+      [{ taskId: "t1", fireAt: "2026-06-02T08:45:00.000Z" }],
+      now,
+    );
+    expect(out.toKeep).toEqual(["t1"]);
+    expect(out.toSchedule).toEqual([]);
+  });
+
+  it("reschedules when offset changes", () => {
+    // Previously scheduled at exact dueDate; now user picks 1h reminder.
+    const t = task({
+      id: "t1",
+      dueDate: "2026-06-02T09:00:00.000Z",
+      reminderOffsetMinutes: 60,
+    });
+    const out = reconcile(
+      [t],
+      [{ taskId: "t1", fireAt: "2026-06-02T09:00:00.000Z" }],
+      now,
+    );
+    expect(out.toCancel).toEqual(["t1"]);
+    expect(out.toSchedule).toHaveLength(1);
+    expect(out.toSchedule[0].fireAt).toBe("2026-06-02T08:00:00.000Z");
   });
 
   it("caps at maxScheduled, taking soonest dueDate first", () => {
@@ -90,7 +162,7 @@ describe("reconcile", () => {
   });
 
   it("returns empty diff when scheduled matches tasks (idempotent)", () => {
-    const due = "2026-06-02T09:00:00Z";
+    const due = "2026-06-02T09:00:00.000Z";
     const t = task({ id: "t1", dueDate: due });
     const scheduled: ScheduledEntry[] = [{ taskId: "t1", fireAt: due }];
     const out = reconcile([t], scheduled, now);
@@ -100,8 +172,8 @@ describe("reconcile", () => {
   });
 
   it("reschedules when dueDate changes (cancel + schedule)", () => {
-    const oldDue = "2026-06-02T09:00:00Z";
-    const newDue = "2026-06-03T15:00:00Z";
+    const oldDue = "2026-06-02T09:00:00.000Z";
+    const newDue = "2026-06-03T15:00:00.000Z";
     const t = task({ id: "t1", dueDate: newDue });
     const scheduled: ScheduledEntry[] = [{ taskId: "t1", fireAt: oldDue }];
     const out = reconcile([t], scheduled, now);
@@ -112,10 +184,10 @@ describe("reconcile", () => {
   });
 
   it("cancels tasks no longer due (removed / completed / deleted)", () => {
-    const t = task({ id: "t2", dueDate: "2026-06-02T09:00:00Z" });
+    const t = task({ id: "t2", dueDate: "2026-06-02T09:00:00.000Z" });
     const scheduled: ScheduledEntry[] = [
-      { taskId: "t1", fireAt: "2026-06-02T09:00:00Z" }, // not in task list
-      { taskId: "t2", fireAt: "2026-06-02T09:00:00Z" }, // still due
+      { taskId: "t1", fireAt: "2026-06-02T09:00:00.000Z" }, // not in task list
+      { taskId: "t2", fireAt: "2026-06-02T09:00:00.000Z" }, // still due
     ];
     const out = reconcile([t], scheduled, now);
     expect(out.toCancel).toEqual(["t1"]);
@@ -124,9 +196,9 @@ describe("reconcile", () => {
   });
 
   it("cancels scheduled tasks that became done", () => {
-    const t = task({ id: "t1", dueDate: "2026-06-02T09:00:00Z", status: "done" });
+    const t = task({ id: "t1", dueDate: "2026-06-02T09:00:00.000Z", status: "done" });
     const scheduled: ScheduledEntry[] = [
-      { taskId: "t1", fireAt: "2026-06-02T09:00:00Z" },
+      { taskId: "t1", fireAt: "2026-06-02T09:00:00.000Z" },
     ];
     const out = reconcile([t], scheduled, now);
     expect(out.toCancel).toEqual(["t1"]);
@@ -134,10 +206,10 @@ describe("reconcile", () => {
   });
 
   it("schedules brand-new task with no prior schedule", () => {
-    const t = task({ id: "t1", dueDate: "2026-06-02T09:00:00Z", title: "Buy milk" });
+    const t = task({ id: "t1", dueDate: "2026-06-02T09:00:00.000Z", title: "Buy milk" });
     const out = reconcile([t], [], now);
     expect(out.toSchedule).toEqual([
-      { taskId: "t1", title: "Buy milk", fireAt: "2026-06-02T09:00:00Z" },
+      { taskId: "t1", title: "Buy milk", fireAt: "2026-06-02T09:00:00.000Z" },
     ]);
     expect(out.toCancel).toEqual([]);
   });

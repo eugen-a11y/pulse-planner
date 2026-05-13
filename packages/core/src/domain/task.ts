@@ -32,6 +32,7 @@ export const TaskSchema = z.object({
   sortOrder: z.number().int(),
   recurrenceRule: RRuleString.nullable(),
   recurrenceParentId: z.string().nullable(),
+  reminderOffsetMinutes: z.number().int().min(0).max(10080).nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),
@@ -51,6 +52,7 @@ export interface MakeTaskInput {
   sortOrder?: number;
   recurrenceRule?: string | null;
   recurrenceParentId?: string | null;
+  reminderOffsetMinutes?: number | null;
 }
 
 export function makeTask(input: MakeTaskInput): Task {
@@ -69,6 +71,7 @@ export function makeTask(input: MakeTaskInput): Task {
     sortOrder: input.sortOrder ?? 0,
     recurrenceRule: input.recurrenceRule ?? null,
     recurrenceParentId: input.recurrenceParentId ?? null,
+    reminderOffsetMinutes: input.reminderOffsetMinutes ?? null,
     createdAt: ts,
     updatedAt: ts,
     deletedAt: null,

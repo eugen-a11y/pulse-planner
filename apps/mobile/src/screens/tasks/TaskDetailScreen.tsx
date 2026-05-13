@@ -29,6 +29,7 @@ import { useDeps } from "@/wiring/depsContext";
 import { MarkdownView } from "@/components/MarkdownView";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { DueDatePicker } from "@/components/DueDatePicker";
+import { ReminderPicker, describeReminder } from "@/components/ReminderPicker";
 import { RRulePicker, describeRRule } from "@/components/RRulePicker";
 import { TagPicker } from "@/components/TagPicker";
 
@@ -71,6 +72,7 @@ export function TaskDetailScreen(): JSX.Element {
   const triedRefresh = useRef(false);
   const [projectOpen, setProjectOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(false);
   const [rruleOpen, setRruleOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
 
@@ -130,7 +132,17 @@ export function TaskDetailScreen(): JSX.Element {
   }
 
   function onPickDate(iso: string | null): void {
-    void update(taskId, { dueDate: iso });
+    // Clearing dueDate also clears the reminder — a reminder without an
+    // anchor would never fire and just clutters the model.
+    if (iso === null && task!.reminderOffsetMinutes !== null) {
+      void update(taskId, { dueDate: null, reminderOffsetMinutes: null });
+    } else {
+      void update(taskId, { dueDate: iso });
+    }
+  }
+
+  function onPickReminder(offset: number | null): void {
+    void update(taskId, { reminderOffsetMinutes: offset });
   }
 
   function onPickRRule(rrule: string | null): void {
@@ -187,11 +199,28 @@ export function TaskDetailScreen(): JSX.Element {
           value={
             <Text className="text-sm text-ink">
               {task.dueDate
-                ? format(parseISO(task.dueDate), "EE dd. MMM yyyy", { locale: de })
+                ? format(parseISO(task.dueDate), "EE dd. MMM yyyy · HH:mm", { locale: de })
                 : "Kein Datum"}
             </Text>
           }
           onPress={() => setDateOpen(true)}
+        />
+
+        {/* Reminder */}
+        <Row
+          label="Erinnerung"
+          value={
+            <Text
+              className={`text-sm ${task.dueDate ? "text-ink" : "text-ink-muted"}`}
+            >
+              {task.dueDate
+                ? describeReminder(task.reminderOffsetMinutes)
+                : "Erst Fälligkeit setzen"}
+            </Text>
+          }
+          onPress={() => {
+            if (task.dueDate) setReminderOpen(true);
+          }}
         />
 
         {/* Recurrence */}
@@ -258,6 +287,12 @@ export function TaskDetailScreen(): JSX.Element {
         value={task.dueDate}
         onPick={onPickDate}
         onClose={() => setDateOpen(false)}
+      />
+      <ReminderPicker
+        visible={reminderOpen}
+        value={task.reminderOffsetMinutes}
+        onPick={onPickReminder}
+        onClose={() => setReminderOpen(false)}
       />
       <RRulePicker
         visible={rruleOpen}

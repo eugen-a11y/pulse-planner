@@ -46,6 +46,9 @@ export async function openExpoSqliteStore(db: SQLiteDatabase): Promise<ExpoSqlit
 /**
  * Idempotent local migrations gated by PRAGMA user_version.
  *   v1 — priority scale 1-4 → 1-3 (1→1, 2→2, 3→2, 4→3).
+ *   v2 — tasks.reminder_offset_minutes column (matches Postgres migration
+ *        20260513000001). Fresh DBs already have it via TABLE_DDL; this branch
+ *        is for upgraded clients only, so it tolerates pre-existing columns.
  */
 async function applyMobileMigrations(db: SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ user_version: number }>("PRAGMA user_version");
@@ -59,6 +62,13 @@ async function applyMobileMigrations(db: SQLiteDatabase): Promise<void> {
       END WHERE priority IN (3, 4);
       PRAGMA user_version = 1;
     `);
+  }
+  if (version < 2) {
+    const cols = await db.getAllAsync<{ name: string }>("PRAGMA table_info(tasks)");
+    if (!cols.some((c) => c.name === "reminder_offset_minutes")) {
+      await db.execAsync("ALTER TABLE tasks ADD COLUMN reminder_offset_minutes INTEGER");
+    }
+    await db.execAsync("PRAGMA user_version = 2");
   }
 }
 

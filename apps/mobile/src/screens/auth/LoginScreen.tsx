@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -10,10 +10,8 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import * as LocalAuthentication from "expo-local-authentication";
 import { useAuth } from "@/stores";
 import {
-  getFaceIdEnabled,
   getRememberMe,
   setRememberMe as savePersistedRememberMe,
 } from "@/lib/prefs";
@@ -21,25 +19,16 @@ import {
 /**
  * Login screen. Mirrors the labels and "Angemeldet bleiben" behaviour of the
  * desktop AuthScreen (apps/desktop/src/renderer/auth/AuthScreen.tsx) but is
- * laid out for touch input.
- *
- * Face-ID quick-unlock is shown when `faceIdEnabled` is true AND `rememberMe`
- * is true. We use `rememberMe` as a proxy for "tokens exist in SecureStore"
- * because that flag is the gate inside `auth.restoreSession`. On success,
- * the route guard in app/_layout.tsx handles the redirect.
+ * laid out for touch input. Auto-restore via the route guard in
+ * app/_layout.tsx handles returning users — no Face-ID branch needed.
  */
 export function LoginScreen(): JSX.Element {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [rememberMe, setRememberMe] = useState<boolean>(getRememberMe());
-  const [faceIdAvailable, setFaceIdAvailable] = useState<boolean>(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setFaceIdAvailable(getFaceIdEnabled() && getRememberMe());
-  }, []);
 
   function toggleRemember(): void {
     const next = !rememberMe;
@@ -54,27 +43,6 @@ export function LoginScreen(): JSX.Element {
     try {
       await useAuth.getState().signIn(email.trim(), pw, rememberMe);
       router.replace("/(tabs)/today");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onFaceId(): Promise<void> {
-    if (busy) return;
-    setError(null);
-    setBusy(true);
-    try {
-      const r = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Pulse entsperren",
-      });
-      if (r.success) {
-        await useAuth.getState().restore();
-        router.replace("/(tabs)/today");
-      } else if (r.error && r.error !== "user_cancel") {
-        setError("Face ID fehlgeschlagen: " + r.error);
-      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -154,18 +122,6 @@ export function LoginScreen(): JSX.Element {
                 {busy ? "..." : "Anmelden"}
               </Text>
             </Pressable>
-
-            {faceIdAvailable ? (
-              <Pressable
-                onPress={onFaceId}
-                disabled={busy}
-                className="rounded-md py-3 items-center mt-3 border border-pulse"
-              >
-                <Text className="text-pulse text-base font-medium">
-                  Mit Face ID entsperren
-                </Text>
-              </Pressable>
-            ) : null}
 
             <View className="flex-row justify-center mt-6">
               <Text className="text-sm text-ink-muted">Neu hier? </Text>

@@ -1,6 +1,6 @@
 {
   "name": "@pulse/mobile",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -38,7 +38,6 @@
     "expo-file-system": "~18.0.0",
     "expo-linear-gradient": "~14.0.0",
     "expo-linking": "~7.0.0",
-    "expo-local-authentication": "~15.0.0",
     "expo-modules-core": "^2.2.3",
     "expo-notifications": "~0.29.0",
     "expo-router": "~4.0.0",

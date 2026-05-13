@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, Platform, Pressable, Text, View } from "react-native";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const DateTimePicker: any = (() => {
@@ -14,11 +14,14 @@ const DateTimePicker: any = (() => {
 })();
 
 /**
- * Bottom-sheet style modal to set / clear a project's due date.
+ * Bottom-sheet style modal to set / clear a task's due date.
  * Quick actions: "Heute", "Morgen", "Datum wählen…", "Entfernen".
  *
  * The "Datum wählen…" branch swaps the action list for the native
- * DateTimePicker (iOS spinner / Android dialog) and confirms on user pick.
+ * DateTimePicker (iOS datetime spinner / Android dialog). The picker stays
+ * open while the user scrolls; only the explicit "Speichern" button commits
+ * the choice and closes the sheet. "Zurück" returns to the preset list,
+ * "Abbrechen" closes without saving.
  *
  * Returns ISO strings via onPick (or null when cleared).
  */
@@ -42,6 +45,18 @@ export function DueDatePicker({
   onClose,
 }: DueDatePickerProps): JSX.Element {
   const [pickingDate, setPickingDate] = useState(false);
+  const [draft, setDraft] = useState<Date>(() =>
+    value ? new Date(value) : new Date(),
+  );
+
+  // Reset draft + branch every time the sheet (re-)opens so we never reuse
+  // stale state from a previous task.
+  useEffect(() => {
+    if (visible) {
+      setPickingDate(false);
+      setDraft(value ? new Date(value) : new Date());
+    }
+  }, [visible, value]);
 
   function pickHeute(): void {
     onPick(atEndOfDay(new Date()).toISOString());
@@ -58,13 +73,13 @@ export function DueDatePicker({
     onClose();
   }
   function onNativeChange(_event: unknown, selected?: Date): void {
-    // Android closes on its own; iOS keeps the picker visible.
-    if (Platform.OS !== "ios") setPickingDate(false);
-    if (selected) {
-      onPick(selected.toISOString());
-      onClose();
-      setPickingDate(false);
-    }
+    // iOS keeps the picker visible; Android closes the modal dialog on its
+    // own (no further events fire). Either way, just update the local draft.
+    if (selected) setDraft(selected);
+  }
+  function commitDraft(): void {
+    onPick(draft.toISOString());
+    onClose();
   }
 
   return (
@@ -96,13 +111,27 @@ export function DueDatePicker({
           {pickingDate && DateTimePicker ? (
             <View className="px-4 pb-2">
               <DateTimePicker
-                value={value ? new Date(value) : new Date()}
+                value={draft}
                 mode="datetime"
                 display={Platform.OS === "ios" ? "spinner" : "default"}
                 themeVariant="light"
                 textColor="#0F172A"
                 onChange={onNativeChange}
               />
+              <View className="flex-row gap-2 mt-2">
+                <Pressable
+                  onPress={() => setPickingDate(false)}
+                  className="flex-1 rounded-md border border-gray-300 py-2 items-center"
+                >
+                  <Text className="text-sm font-medium text-ink">Zurück</Text>
+                </Pressable>
+                <Pressable
+                  onPress={commitDraft}
+                  className="flex-1 rounded-md bg-pulse py-2 items-center"
+                >
+                  <Text className="text-sm font-medium text-white">Speichern</Text>
+                </Pressable>
+              </View>
             </View>
           ) : (
             <View className="px-2 pb-2">

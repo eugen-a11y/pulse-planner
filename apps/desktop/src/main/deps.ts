@@ -74,6 +74,15 @@ function applyAdditiveMigrations(db: Database.Database): void {
       PRAGMA foreign_keys = ON;
     `);
   }
+
+  // 20260513000001 — tasks.reminder_offset_minutes. Run last so it applies even
+  // after the project_id rebuild above (which recreates tasks without it).
+  // Mobile-only feature today, but column lives in shared schema so desktop
+  // must accept it during sync.
+  const taskColsAfter = db.prepare("PRAGMA table_info(tasks)").all() as Array<{ name: string }>;
+  if (!taskColsAfter.some((c) => c.name === "reminder_offset_minutes")) {
+    db.exec("ALTER TABLE tasks ADD COLUMN reminder_offset_minutes INTEGER");
+  }
 }
 
 export interface AppDeps {

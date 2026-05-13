@@ -14,21 +14,18 @@ import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import * as Application from "expo-application";
 import * as Notifications from "expo-notifications";
-import * as LocalAuthentication from "expo-local-authentication";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { Platform } from "react-native";
 import { useAuth, useSync, manualPull } from "@/stores";
 import { ChevronRight } from "lucide-react-native";
 import { useDeps } from "@/wiring/depsContext";
-import { getFaceIdEnabled, setFaceIdEnabled } from "@/lib/prefs";
 import { readDebugLog } from "@/lib/debugLog";
 
 /**
- * SettingsScreen (Task 18). Read-only Konto + Sync controls + Sicherheit
- * (Face ID) + Erinnerungen (notification permission gate) + Über (app version
- * via expo-application) + Debug (export non-sensitive log JSON via
- * Sharing.shareAsync).
+ * SettingsScreen. Read-only Konto + Sync controls + Erinnerungen (notification
+ * permission gate) + Über (app version via expo-application) + Debug (export
+ * non-sensitive log JSON via Sharing.shareAsync).
  *
  * Logout flow: confirm dialog → useAuth.signOut() (clears engine + userId via
  * deps) → Notifications.cancelAllScheduledNotificationsAsync() (best-effort) →
@@ -50,22 +47,8 @@ export function SettingsScreen(): JSX.Element {
   const status = useSync((s) => s.status);
 
   const [pulling, setPulling] = useState(false);
-  const [faceIdOn, setFaceIdOn] = useState<boolean>(getFaceIdEnabled());
-  const [faceIdAvailable, setFaceIdAvailable] = useState<boolean>(true);
   const [notifStatus, setNotifStatus] = useState<NotifStatus>("undetermined");
   const [exporting, setExporting] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const hw = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        setFaceIdAvailable(hw && enrolled);
-      } catch {
-        setFaceIdAvailable(false);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -126,16 +109,6 @@ export function SettingsScreen(): JSX.Element {
       ],
     );
   }, [router]);
-
-  const onToggleFaceId = useCallback((next: boolean) => {
-    // Don't gate on faceIdAvailable: hasHardwareAsync/isEnrolledAsync can
-    // misreport (especially on first launch before the user has granted any
-    // bio access). If hardware really is missing, LocalAuthentication's own
-    // prompt at unlock time will fail gracefully — better UX than a stuck
-    // disabled toggle.
-    setFaceIdEnabled(next);
-    setFaceIdOn(next);
-  }, []);
 
   const onToggleNotif = useCallback(async (next: boolean) => {
     if (!next) {
@@ -249,23 +222,6 @@ export function SettingsScreen(): JSX.Element {
             <ChevronRight size={18} color="#9ca3af" />
           </View>
         </Pressable>
-      </Card>
-
-      {/* Sicherheit */}
-      <SectionHeader title="Sicherheit" />
-      <Card>
-        <View className="px-4 py-3 flex-row items-center justify-between">
-          <View className="flex-1 pr-3">
-            <Text className="text-base text-ink">Face ID zum Entsperren</Text>
-            {!faceIdAvailable ? (
-              <Text className="text-xs text-ink-muted mt-1">Face ID nicht verfügbar</Text>
-            ) : null}
-          </View>
-          <Switch
-            value={faceIdOn}
-            onValueChange={onToggleFaceId}
-          />
-        </View>
       </Card>
 
       {/* Erinnerungen */}

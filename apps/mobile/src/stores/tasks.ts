@@ -76,8 +76,9 @@ function serializeTaskForOutbox(t: Task): Record<string, unknown> {
     title: t.title, description: t.description, status: t.status,
     priority: t.priority, dueDate: t.dueDate, completedAt: t.completedAt,
     sortOrder: t.sortOrder, recurrenceRule: t.recurrenceRule,
-    recurrenceParentId: t.recurrenceParentId, createdAt: t.createdAt,
-    updatedAt: t.updatedAt, deletedAt: t.deletedAt,
+    recurrenceParentId: t.recurrenceParentId,
+    reminderOffsetMinutes: t.reminderOffsetMinutes,
+    createdAt: t.createdAt, updatedAt: t.updatedAt, deletedAt: t.deletedAt,
   };
 }
 
