@@ -79,7 +79,9 @@ export function LoginScreen(): JSX.Element {
               autoComplete="email"
               autoCorrect={false}
               editable={!busy}
-              className="border border-gray-300 rounded-md px-3 py-3 text-base text-ink"
+              style={{ color: "#0F172A" }}
+              placeholderTextColor="#64748B"
+              className="border border-gray-300 rounded-md px-3 py-3 text-base"
             />
             <TextInput
               value={pw}
@@ -89,7 +91,9 @@ export function LoginScreen(): JSX.Element {
               autoCapitalize="none"
               autoComplete="password"
               editable={!busy}
-              className="border border-gray-300 rounded-md px-3 py-3 text-base text-ink mt-3"
+              style={{ color: "#0F172A" }}
+              placeholderTextColor="#64748B"
+              className="border border-gray-300 rounded-md px-3 py-3 text-base mt-3"
             />
 
             <Pressable
