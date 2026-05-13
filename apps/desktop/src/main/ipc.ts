@@ -107,6 +107,34 @@ export function registerIpc(deps: AppDeps, getWin: () => BrowserWindow | null): 
     await deps.auth.signOut();
     deps.engine = null;
   });
+  ipcMain.handle("auth.deleteAccount", async () => {
+    // Server-side cascade via auth.users FK. Local wipe + signOut after.
+    const { error } = await deps.supabase.rpc("delete_account");
+    if (error) throw new Error(error.message);
+    stopBackgroundSync();
+    try {
+      deps.db.exec(`
+        DELETE FROM task_tags;
+        DELETE FROM comments;
+        DELETE FROM notes;
+        DELETE FROM time_entries;
+        DELETE FROM attachments;
+        DELETE FROM tasks;
+        DELETE FROM projects;
+        DELETE FROM tags;
+        DELETE FROM sync_state;
+      `);
+    } catch { /* best-effort local wipe */ }
+    try { await deps.auth.signOut(); } catch { /* ignore */ }
+    deps.engine = null;
+    savePrefs({ rememberMe: false });
+  });
+  ipcMain.handle("auth.resetPasswordForEmail", async (_e, email: string) => {
+    const { error } = await deps.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://eugen-a11y.github.io/pulse-planner/reset-password.html",
+    });
+    if (error) throw new Error(error.message);
+  });
   ipcMain.handle("auth.restoreSession", async () => {
     const prefs = loadPrefs();
     if (!prefs.rememberMe) {

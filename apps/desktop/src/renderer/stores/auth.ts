@@ -8,6 +8,7 @@ interface AuthState {
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signUp: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   restore: () => Promise<void>;
 }
 
@@ -24,6 +25,10 @@ export const useAuth = create<AuthState>((set) => ({
   },
   async signOut() {
     await api.auth.signOut();
+    set({ session: null });
+  },
+  async deleteAccount() {
+    await api.auth.deleteAccount();
     set({ session: null });
   },
   async restore() {

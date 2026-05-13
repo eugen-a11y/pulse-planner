@@ -29,6 +29,11 @@ export interface PulseApi {
     signUp(email: string, password: string, rememberMe?: boolean): Promise<PulseSession>;
     signOut(): Promise<void>;
     restoreSession(): Promise<PulseSession | null>;
+    /** Calls public.delete_account() RPC. Server cascades via FK to all user data;
+     *  main also wipes local SQLite + tokens and signs out. */
+    deleteAccount(): Promise<void>;
+    /** Sends Supabase recovery email with redirect to our GitHub Pages reset page. */
+    resetPasswordForEmail(email: string): Promise<void>;
   };
   prefs: {
     get(): Promise<{ rememberMe: boolean }>;
