@@ -6,14 +6,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "pulse-planner",
   owner: "deathrage94s-organization",
   scheme: "pulse",
-  version: "0.1.21",
+  version: "0.1.22",
   orientation: "portrait",
   userInterfaceStyle: "automatic",
   icon: "./assets/icon.png",
   splash: { image: "./assets/icon.png", resizeMode: "contain", backgroundColor: "#FFFFFF" },
   ios: {
     bundleIdentifier: "me.reinfeld.pulse",
-    buildNumber: "22",
+    buildNumber: "23",
     supportsTablet: false,
     infoPlist: {
       UIBackgroundModes: ["fetch", "processing"],
