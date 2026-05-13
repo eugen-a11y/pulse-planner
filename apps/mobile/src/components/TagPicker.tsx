@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { useTags } from "@/stores/tags";
 import { ColorSwatchPopover, PROJECT_COLORS } from "./ColorSwatchPopover";
 
@@ -82,6 +92,10 @@ export function TagPicker({ visible, taskId, onClose }: TagPickerProps): JSX.Ele
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
       <Pressable onPress={onClose} className="flex-1 justify-end">
         <Pressable
           onPress={() => {}}
@@ -138,27 +152,58 @@ export function TagPicker({ visible, taskId, onClose }: TagPickerProps): JSX.Ele
           )}
 
           {composing ? (
-            <View className="px-4 py-3 flex-row items-center gap-2 border-t border-gray-200">
+            <View
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                borderTopWidth: 1,
+                borderTopColor: "#E5E7EB",
+              }}
+            >
               <Pressable onPress={() => setSwatchOpen(true)} hitSlop={6}>
                 <View
-                  className="w-5 h-5 rounded-full border border-black/10"
-                  style={{ backgroundColor: color }}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: "rgba(0,0,0,0.1)",
+                    backgroundColor: color,
+                  }}
                 />
               </Pressable>
               <TextInput
                 value={name}
                 onChangeText={setName}
                 placeholder="Tag-Name…"
+                placeholderTextColor="#94A3B8"
                 autoFocus
                 onSubmitEditing={() => void createAndAttach()}
-                className="flex-1 text-sm text-ink border-b border-pulse pb-1"
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  color: "#0F172A",
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#2563EB",
+                  paddingBottom: 4,
+                }}
               />
               <Pressable
                 onPress={() => void createAndAttach()}
-                className="px-3 py-1 rounded-md bg-pulse"
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 6,
+                  backgroundColor: "#2563EB",
+                }}
                 hitSlop={6}
               >
-                <Text className="text-xs font-medium text-white">Anlegen</Text>
+                <Text style={{ fontSize: 12, fontWeight: "500", color: "#FFFFFF" }}>
+                  Anlegen
+                </Text>
               </Pressable>
             </View>
           ) : (
@@ -179,6 +224,7 @@ export function TagPicker({ visible, taskId, onClose }: TagPickerProps): JSX.Ele
           </Pressable>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
 
       <ColorSwatchPopover
         visible={swatchOpen}

@@ -116,6 +116,7 @@ export function DueDatePicker({
                 display={Platform.OS === "ios" ? "spinner" : "default"}
                 themeVariant="light"
                 textColor="#0F172A"
+                locale="de-DE"
                 onChange={onNativeChange}
               />
               <View className="flex-row gap-2 mt-2">

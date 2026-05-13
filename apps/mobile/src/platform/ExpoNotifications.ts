@@ -28,10 +28,14 @@ export const TASK_DUE_CATEGORY = "TASK_DUE";
 let categoryRegistered = false;
 let responseListener: { remove: () => void } | null = null;
 
-// Foreground display: show banner + sound + badge.
+// Foreground display: show banner + sound + badge. The new SDK 52 fields
+// (shouldShowBanner / shouldShowList) replace the deprecated shouldShowAlert
+// — we set all three so the API works under both surface versions.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -66,12 +70,19 @@ export async function requestPermissions(): Promise<boolean> {
 /** Schedule a single notification. Returns the Expo identifier. */
 export async function scheduleNotification(spec: TaskNotificationSpec): Promise<string> {
   const fireDate = new Date(spec.fireAt);
+  // CRITICAL: pass identifier = taskId so iOS de-dupes. Without this, every
+  // reconcile pass with a not-yet-visible just-scheduled notification would
+  // schedule a fresh duplicate (Build 19 fired 20× per task because
+  // getAllScheduledNotificationsAsync lagged the schedule write).
   return await Notifications.scheduleNotificationAsync({
+    identifier: spec.taskId,
     content: {
       title: `Fällig: ${spec.title}`,
       body: spec.body,
       data: { taskId: spec.taskId },
       categoryIdentifier: TASK_DUE_CATEGORY,
+      // Without an explicit sound the notification arrives silently.
+      sound: "default",
     },
     // SDK 52 / expo-notifications 0.29 requires explicit `type`. Without it
     // expo falls back to an immediate trigger, which is why every scheduled
@@ -83,10 +94,14 @@ export async function scheduleNotification(spec: TaskNotificationSpec): Promise<
   });
 }
 
-/** Cancel every scheduled notification whose data.taskId matches. */
+/** Cancel the scheduled notification for the task (identifier = taskId). */
 export async function cancelForTask(taskId: string): Promise<void> {
+  // Belt-and-braces: cancel by the stable identifier first, then sweep any
+  // stragglers left over from pre-Build-20 builds that used random identifiers.
+  try { await Notifications.cancelScheduledNotificationAsync(taskId); } catch { /* ignore */ }
   const all = await Notifications.getAllScheduledNotificationsAsync();
   for (const n of all) {
+    if (n.identifier === taskId) continue; // already cancelled above
     const data = (n.content?.data ?? {}) as { taskId?: string };
     if (data.taskId === taskId) {
       await Notifications.cancelScheduledNotificationAsync(n.identifier);

@@ -156,6 +156,11 @@ export function TaskDetailScreen(): JSX.Element {
     >
       <ScrollView
         keyboardShouldPersistTaps="handled"
+        // iOS 14+: auto-shift content above the keyboard so a focused field
+        // at the bottom of the page (comment composer, subtask input) stays
+        // visible without the user having to scroll manually.
+        automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: 96 }}
       >
         {/* Header */}
