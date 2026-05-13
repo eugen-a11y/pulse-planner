@@ -4,14 +4,17 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "ios": { "simulator": false }
+      "ios": { "simulator": false },
+      "android": { "buildType": "apk" }
     },
     "preview": {
       "distribution": "internal",
-      "ios": { "simulator": false }
+      "ios": { "simulator": false },
+      "android": { "buildType": "apk" }
     },
     "production": {
-      "ios": { "simulator": false, "image": "latest" }
+      "ios": { "simulator": false, "image": "latest" },
+      "android": { "buildType": "app-bundle" }
     }
   },
   "submit": {

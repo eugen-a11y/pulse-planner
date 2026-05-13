@@ -24,6 +24,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "com.apple.security.application-groups": ["group.me.reinfeld.pulse"]
     }
   },
+  android: {
+    package: "me.reinfeld.pulse",
+    versionCode: 1,
+    adaptiveIcon: {
+      foregroundImage: "./assets/adaptive-icon.png",
+      backgroundColor: "#FFFFFF"
+    },
+    permissions: [
+      "POST_NOTIFICATIONS",
+      "RECEIVE_BOOT_COMPLETED",
+      "VIBRATE",
+      "SCHEDULE_EXACT_ALARM"
+    ]
+  },
   experiments: { typedRoutes: true },
   plugins: [
     "expo-router",
