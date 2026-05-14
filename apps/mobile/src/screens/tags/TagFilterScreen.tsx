@@ -14,6 +14,7 @@ import { useTags } from "@/stores/tags";
 import { useTasks } from "@/stores/tasks";
 import { useDeps } from "@/wiring/depsContext";
 import { TaskRow } from "@/components/TaskRow";
+import { groupTasks, TaskSectionHeader } from "@/components/TaskSectionList";
 import { refreshAll } from "@/stores/refresh-all";
 
 /**
@@ -158,13 +159,17 @@ export function TagFilterScreen(): JSX.Element {
         </View>
       ) : (
         <FlatList
-          data={tasks}
-          keyExtractor={(t) => t.id}
-          renderItem={({ item }) => (
-            <View className="mb-1.5">
-              <TaskRow task={item} />
-            </View>
-          )}
+          data={groupTasks(tasks)}
+          keyExtractor={(r) => (r.type === "header" ? r.key : r.task.id)}
+          renderItem={({ item }) =>
+            item.type === "header" ? (
+              <TaskSectionHeader label={item.label} count={item.count} muted={item.muted} />
+            ) : (
+              <View className="mb-1.5" style={item.done ? { opacity: 0.55 } : undefined}>
+                <TaskRow task={item.task} />
+              </View>
+            )
+          }
           contentContainerStyle={{ padding: 16, flexGrow: 1 }}
           refreshControl={
             <RefreshControl

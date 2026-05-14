@@ -18,6 +18,7 @@ import { useProjects } from "@/stores/projects";
 import { useTasks } from "@/stores/tasks";
 import { useDeps } from "@/wiring/depsContext";
 import { TaskRow } from "@/components/TaskRow";
+import { groupTasks, TaskSectionHeader, type TaskRow as Row } from "@/components/TaskSectionList";
 import { ColorSwatchPopover } from "@/components/ColorSwatchPopover";
 import { DueDatePicker } from "@/components/DueDatePicker";
 import { MarkdownView } from "@/components/MarkdownView";
@@ -299,6 +300,8 @@ function ProjectTasksTab({ projectId }: { projectId: string }): JSX.Element {
     return out;
   }, [ids, byId, projectId]);
 
+  const rows = useMemo<Row[]>(() => groupTasks(tasks), [tasks]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -333,13 +336,17 @@ function ProjectTasksTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <FlatList
-      data={tasks}
-      keyExtractor={(t) => t.id}
-      renderItem={({ item }) => (
-        <View className="mb-1.5">
-          <TaskRow task={item} />
-        </View>
-      )}
+      data={rows}
+      keyExtractor={(r) => (r.type === "header" ? r.key : r.task.id)}
+      renderItem={({ item }) =>
+        item.type === "header" ? (
+          <TaskSectionHeader label={item.label} count={item.count} muted={item.muted} />
+        ) : (
+          <View className="mb-1.5" style={item.done ? { opacity: 0.55 } : undefined}>
+            <TaskRow task={item.task} />
+          </View>
+        )
+      }
       contentContainerStyle={{ padding: 16 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563EB" />

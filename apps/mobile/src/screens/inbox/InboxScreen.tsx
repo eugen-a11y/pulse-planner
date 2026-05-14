@@ -12,6 +12,7 @@ import type { Task } from "@pulse/core";
 import { useTasks } from "@/stores/tasks";
 import { useDeps } from "@/wiring/depsContext";
 import { TaskRow } from "@/components/TaskRow";
+import { groupTasks, TaskSectionHeader } from "@/components/TaskSectionList";
 import { SyncStatusPill } from "@/components/SyncStatusPill";
 import { ProjectPickerSheet } from "@/components/ProjectPickerSheet";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
@@ -55,6 +56,8 @@ export function InboxScreen(): JSX.Element {
     }
     return out;
   }, [ids, byId]);
+
+  const rows = useMemo(() => groupTasks(tasks), [tasks]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -104,21 +107,25 @@ export function InboxScreen(): JSX.Element {
         </View>
       ) : (
         <FlatList
-          data={tasks}
-          keyExtractor={(t) => t.id}
-          renderItem={({ item }) => (
-            <View className="mb-1.5">
-              <TaskRow
-                task={item}
-                extraActions={[
-                  {
-                    label: "Verschieben in Projekt…",
-                    onPress: () => setMovingId(item.id),
-                  },
-                ]}
-              />
-            </View>
-          )}
+          data={rows}
+          keyExtractor={(r) => (r.type === "header" ? r.key : r.task.id)}
+          renderItem={({ item }) =>
+            item.type === "header" ? (
+              <TaskSectionHeader label={item.label} count={item.count} muted={item.muted} />
+            ) : (
+              <View className="mb-1.5" style={item.done ? { opacity: 0.55 } : undefined}>
+                <TaskRow
+                  task={item.task}
+                  extraActions={[
+                    {
+                      label: "Verschieben in Projekt…",
+                      onPress: () => setMovingId(item.task.id),
+                    },
+                  ]}
+                />
+              </View>
+            )
+          }
           contentContainerStyle={{ padding: 16 }}
           refreshControl={
             <RefreshControl

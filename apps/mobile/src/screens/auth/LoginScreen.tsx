@@ -128,7 +128,7 @@ export function LoginScreen(): JSX.Element {
             </Pressable>
 
             <View className="items-center mt-3">
-              <Pressable onPress={() => router.push("/auth/forgot")} hitSlop={8}>
+              <Pressable onPress={() => router.push("/auth/forgot" as never)} hitSlop={8}>
                 <Text className="text-sm text-pulse underline">Passwort vergessen?</Text>
               </Pressable>
             </View>
